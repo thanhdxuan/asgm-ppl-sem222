@@ -44,7 +44,7 @@ class MT22Parser ( Parser ):
                       "OP_MUL", "OP_DIV", "OP_MOD", "OP_NOT", "OP_AND", 
                       "OP_OR", "OP_EQ", "OP_INEQ", "OP_LESS", "OP_GREATER", 
                       "OP_LESS_OR_EQ", "OP_GREA_OR_EQ", "SEMI", "COMMA", 
-                      "LB", "RB", "LP", "RP", "DOT", "INTLIT", "ID", "WS", 
+                      "LB", "RB", "LP", "RP", "DOT", "FLOATLIT", "ID", "WS", 
                       "ERROR_CHAR", "UNCLOSE_STRING", "ILLEGAL_ESCAPE" ]
 
     RULE_program = 0
@@ -95,7 +95,7 @@ class MT22Parser ( Parser ):
     LP=41
     RP=42
     DOT=43
-    INTLIT=44
+    FLOATLIT=44
     ID=45
     WS=46
     ERROR_CHAR=47

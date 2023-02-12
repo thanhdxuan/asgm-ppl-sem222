@@ -28,7 +28,11 @@ OP_LESS_OR_EQ: '<='; OP_GREA_OR_EQ: '>=';
 SEMI: ';'; COMMA: ','; LB: '('; RB: ')'; LP: '{'; RP: '}'; DOT: '.';
 //Checkcommit
 //Literals
-INTLIT: '0' | [1-9][0-9]*; 
+FLOATLIT: INTPART DECPART;
+// INTLIT: INTPART {self.text = self.text.replace("_", "")}; 
+fragment INTPART: '0' | [1-9] [0-9]* ('_'[0-9]+)* {self.text = self.text.replace("_", "")};
+fragment DECPART: [0-9]+;
+fragment EXPPART: [eE] [+-]? [0-9]+;
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 WS: [ \b\t\r\n]+ -> skip; // skip spaces, tabs, newlines
 ERROR_CHAR: .;
