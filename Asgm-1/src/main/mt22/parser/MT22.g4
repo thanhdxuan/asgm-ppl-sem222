@@ -28,13 +28,18 @@ OP_LESS_OR_EQ: '<='; OP_GREA_OR_EQ: '>=';
 SEMI: ';'; COMMA: ','; LB: '('; RB: ')'; LP: '{'; RP: '}'; DOT: '.';
 //Checkcommit
 //Literals
-FLOATLIT: INTPART DECPART;
-// INTLIT: INTPART {self.text = self.text.replace("_", "")}; 
-fragment INTPART: '0' | [1-9] [0-9]* ('_'[0-9]+)* {self.text = self.text.replace("_", "")};
-fragment DECPART: [0-9]+;
+FLOATLIT: (INTPART DECPART | INTPART DECPART? EXPPART) {self.text = self.text.replace("_", "")};
+INTLIT: INTPART {self.text = self.text.replace("_", "")};
+fragment INTPART: '0' | [1-9] [0-9]* ('_'[0-9]+)* ;
+fragment DECPART: '.' [0-9]+;
 fragment EXPPART: [eE] [+-]? [0-9]+;
+STRINGLIT: '"' ( '\\' [bfrnt'"\\] | ~[\n"])* '"' {self.text = self.text[1:-1]};
+fragment CHARACTER: '\b';
+
+ARRLIT: '{' (STRINGLIT | FLOATLIT | INTLIT) (',' (STRINGLIT | FLOATLIT | INTLIT))* '}';
+
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 WS: [ \b\t\r\n]+ -> skip; // skip spaces, tabs, newlines
-ERROR_CHAR: .;
-UNCLOSE_STRING: .;
-ILLEGAL_ESCAPE: .;
+ILLEGAL_ESCAPE: '\\' (~[bfrnt'\\])* {raise IllegalEscape(self.text)};
+UNCLOSE_STRING: '"' [.]* {raise UncloseString(self.text)};
+ERROR_CHAR: . {raise ErrorToken(self.text)};

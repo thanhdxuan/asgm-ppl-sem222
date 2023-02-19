@@ -11,7 +11,7 @@ else:
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\63")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\66")
         buf.write("\7\4\2\t\2\3\2\3\2\3\2\2\2\3\2\2\2\2\5\2\4\3\2\2\2\4\5")
         buf.write("\7\2\2\3\5\3\3\2\2\2\2")
         return buf.getvalue()
@@ -44,8 +44,9 @@ class MT22Parser ( Parser ):
                       "OP_MUL", "OP_DIV", "OP_MOD", "OP_NOT", "OP_AND", 
                       "OP_OR", "OP_EQ", "OP_INEQ", "OP_LESS", "OP_GREATER", 
                       "OP_LESS_OR_EQ", "OP_GREA_OR_EQ", "SEMI", "COMMA", 
-                      "LB", "RB", "LP", "RP", "DOT", "FLOATLIT", "ID", "WS", 
-                      "ERROR_CHAR", "UNCLOSE_STRING", "ILLEGAL_ESCAPE" ]
+                      "LB", "RB", "LP", "RP", "DOT", "FLOATLIT", "INTLIT", 
+                      "STRINGLIT", "ARRLIT", "ID", "WS", "ILLEGAL_ESCAPE", 
+                      "UNCLOSE_STRING", "ERROR_CHAR" ]
 
     RULE_program = 0
 
@@ -96,11 +97,14 @@ class MT22Parser ( Parser ):
     RP=42
     DOT=43
     FLOATLIT=44
-    ID=45
-    WS=46
-    ERROR_CHAR=47
-    UNCLOSE_STRING=48
-    ILLEGAL_ESCAPE=49
+    INTLIT=45
+    STRINGLIT=46
+    ARRLIT=47
+    ID=48
+    WS=49
+    ILLEGAL_ESCAPE=50
+    UNCLOSE_STRING=51
+    ERROR_CHAR=52
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
