@@ -6,8 +6,6 @@ class LexerSuite(unittest.TestCase):
 
     def test1(self):
         """test identifiers"""
-        self.assertTrue(TestLexer.test("\"heheha\"", "heheha,<EOF>", 101))
-        #test escape sequences
-        self.assertTrue(TestLexer.test("\"heh\teha\"", "heh\teha,<EOF>", 102))
-        self.assertTrue(TestLexer.test("\"heh\\eha\"", "heh\eha,<EOF>", 103))
-        self.assertTrue(TestLexer.test("\"heh\\\"eha\"", "heh\\\"eha,<EOF>", 104))
+        self.assertTrue(TestLexer.test("{1, 2, 3, 4, 5, 6}", "{1, 2, 3, 4, 5, 6},<EOF>", 101))
+        self.assertTrue(TestLexer.test("{\"Kangxi\", \"Yongz\\lheng\", \"Qianlong\"}", "{\"Kangxi\", \"Yongzheng\", \"Qianlong\"},<EOF>", 102))
+
