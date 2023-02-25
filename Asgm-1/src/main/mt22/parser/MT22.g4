@@ -10,19 +10,22 @@ options {
 
 program: decl EOF;
 
-decl: vardecl | funcdecl;
+decl: vardecllist | funcdecllist | ;
+
+vardecllist: vardecl vardecllist | vardecl;
+funcdecllist: funcdecl funcdecllist | funcdecl;
 
 vardecl: var_shortform | var_fullform;
-var_shortform: idlist COLON (atomic_type | AUTO) SEMI;
+var_shortform: idlist COLON (atomic_type | AUTO | array_type) SEMI;
 var_fullform: temp1=idlist COLON (atomic_type | AUTO) OP_EQ temp2=exprlist {$temp1.text.count(',') == $temp2.text.count(',')}? SEMI;
 
 //class A: private B {}
-funcdecl: ID COLON FUNCT func_return_type LB paramlist RB (INHERIT ID)? LP body RP;
+funcdecl: ID COLON FUNCT func_return_type LB paramlist RB (INHERIT ID)? body;
 //[inherit]? [out]? <identifier>: <type>
 paramlist: param COMMA paramlist | param;
 param: INHERIT? OUT? ID COLON (atomic_type | AUTO) |;
 
-body: 'body';
+body: block_stmt;
 
 
 func_return_type: INT
@@ -34,35 +37,15 @@ func_return_type: INT
 						;
 idlist: (ID COMMA) idlist | ID;
 //Arithmetic operators
-arthmetic_int_op: OP_MINUS
-						| OP_ADD
-						| OP_MUL
-						| OP_MOD
-						;
-arthmetic_float_op: OP_MINUS
-						| OP_ADD
-						| OP_MUL
-						;
-bool_op: OP_NOT
-			| OP_AND
+LOGIC_OP: OP_AND
 			| OP_OR;
-realational_int_op: OP_EQ_EQ
+RELATION_OP: OP_EQ_EQ
 							| OP_INEQ
 							| OP_LESS
 							| OP_LESS_OR_EQ
 							| OP_GREATER
 							| OP_GREA_OR_EQ
 							;
-realational_float_op: OP_LESS
-							| OP_LESS_OR_EQ
-							| OP_GREATER
-							| OP_GREA_OR_EQ
-							;
-realational_bool_op: OP_EQ_EQ
-							| OP_INEQ
-							;
-			
-index_op: ID '[' exprlist ']';
 //function calls
 func_call: ID LB argslist RB;
 argslist: arg_prime | ;
@@ -72,34 +55,87 @@ arg: INTLIT | STRINGLIT | FLOATLIT | BOOLLIT | ID;
 exprlist: exprprime | ;
 exprprime: expr COMMA exprprime | expr;
 
-
-expr: ;
+//non-empty exprlist
+nonempty_exprlist: expr COMMA nonempty_exprlist | expr;
 //expression
-str_expr: str_expr OP_STR_CONCAT str_expr | str_operands; //none - associative
-str_operands: STRINGLIT | ID;
+expr: str_operands OP_STR_CONCAT str_operands | str_operands; //none - associative
+str_operands: int_expr;
+int_expr: int_term1 RELATION_OP int_term1 | int_term1;
+int_term1: int_term1 LOGIC_OP int_term2 | int_term2;
+int_term2: int_term2 (OP_ADD | OP_MINUS) int_term3 | int_term3;
+int_term3: int_term3 (OP_MUL | OP_MOD | OP_DIV) int_term4 | int_term4;
+int_term4: OP_NOT int_term4 | int_term5;
 
-int_expr: int_expr realational_int_op int_expr | int_term1;
-int_term1: ;
+int_term5: OP_MINUS int_term5 | int_term6; // op_type: sign example: -4
+int_term6: int_term7 '[' nonempty_exprlist ']' | int_term7;
+int_term7: INTLIT | FLOATLIT | STRINGLIT | ID | subexpr | callexpr;
 
-term_1:  term_2 OP_MINUS term_2 | term_2; //non - associative
-term_2: term_2 (OP_MUL | OP_DIV) term_3 | term_3; //left - associative
-term_3: subexpr | callexpr | INTLIT | FLOATLIT | STRINGLIT;
 subexpr: LB expr RB;
 callexpr: ID LB exprlist RB;
+
+
+//statements
+//FIXME - fix statements list
+stmtslist: stmt stmtslist | ;
+stmt: assign_stmt
+		| if_stmt 
+		| for_stmt 
+		| while_stmt 
+		| do_while_stmt 
+		| break_stmt 
+		| continue_stmt 
+		| return_stmt
+		| block_stmt
+		| call_stmt
+		;
+assign_stmt: (ID | int_term6) OP_EQ expr SEMI;
+//if-else
+if_stmt: IF LB expr RB stmt (ELSE stmtslist)?;
+
+//for
+for_stmt: FOR LB scalar_var OP_EQ init_expr COMMA cond_expr COMMA update_expr RB stmt;
+//FIXME - scalar var
+scalar_var: ID;
+init_expr: expr; cond_expr: expr; update_expr: expr;
+
+//while
+while_stmt: WHILE LB cond_expr RB stmt;
+
+//do-while
+do_while_stmt: DO stmt WHILE LB cond_expr RB SEMI;
+
+//break
+break_stmt: BREAK SEMI;
+
+//continue
+continue_stmt: CONTINUE SEMI;
+
+//return
+return_stmt: RETURN expr SEMI;
+
+//call a function
+call_stmt: ID LB exprlist RB SEMI;
+
+//block statements
+block_stmt: LP (vardecl | stmtslist) RP;
+
+
 
 arraylit: '{' exprlist'}';
 
 //array type
-dimension_list: (dms COMMA) dimension_list | dms;
-dms: INTLIT;
 
 array_type: ARRAY '[' dimension_list ']' OF atomic_type;
+dimension_list: (dms COMMA) dimension_list | dms;
+dms: INTLIT;
 
 atomic_type: BOOL
 				| INT
 				| FLOAT 
 				| STR
 				;
+
+
 
 //variables decle
 
