@@ -126,7 +126,7 @@ break_stmt: BREAK SEMI;
 continue_stmt: CONTINUE SEMI;
 
 //return
-return_stmt: RETURN expr? SEMI;
+return_stmt: RETURN SEMI | RETURN expr SEMI;
 
 //call a function
 call_stmt: ID LB exprlist RB SEMI;
@@ -152,6 +152,7 @@ atomic_type: BOOL
 				;
 
 
+idlist: (ID COMMA) idlist | ID;
 
 //variables decle
 
@@ -212,7 +213,6 @@ OP_GREA_OR_EQ: '>=';
 //Checkcommit
 //Literals
 BOOLLIT: 'true' | 'false';
-idlist: (ID COMMA) idlist | ID;
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 
 FLOATLIT: (INTPART? DECPART EXPPART | INTPART DECPART? EXPPART | INTPART DECPART EXPPART?) {self.text = self.text.replace("_", "")};
