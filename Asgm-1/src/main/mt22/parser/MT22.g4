@@ -21,16 +21,18 @@ vardecl: var_shortform | var_fullform;
 var_shortform: idlist COLON (atomic_type | AUTO | array_type) SEMI;
 // var_fullform: idlist COLON (atomic_type | AUTO) OP_EQ nonempty_exprlist  SEMI;
 var_fullform: helpper SEMI;
-base: ID COLON atomic_type OP_EQ expr;
+base: ID COLON (atomic_type | AUTO | array_type) OP_EQ expr;
 helpper: ID COMMA helpper COMMA expr | base;
 
 // ( {$i<$n}? INT {$i=$i+1;} )*
 // FIXME: a,b: array [2, 2, 3] of integer = {{3,2},{1,2}}, {{1,2},{1,2}};
 //class A: private B {}
 //[inherit]? [out]? <identifier>: <type>
-paramlist: param COMMA paramlist | param;
-param: INHERIT? OUT? ID COLON (atomic_type | AUTO) | ;
+param: INHERIT? OUT? ID COLON (atomic_type | AUTO | array_type);
+paramlist: paramprime | ;
+paramprime: param COMMA paramprime | param;
 
+//INHERIT? OUT? ID COLON (atomic_type | AUTO | array_type)
 
 
 func_return_type: INT
