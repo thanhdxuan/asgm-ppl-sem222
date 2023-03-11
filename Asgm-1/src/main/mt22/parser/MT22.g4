@@ -60,6 +60,69 @@ RELATION_OP: OP_EQ_EQ
 // arg_prime: arg COMMA arg_prime | arg;
 // arg: INTLIT | STRINGLIT | FLOATLIT | BOOLLIT | ID;
 
+
+//special functions
+special_func_callstmt: (special_func_read | special_func_print | special_func_super) SEMI;
+special_func_read: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB;
+special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
+special_func_super: SUPER_FUNC LB exprlist RB;
+
+
+
+
+//statements
+//FIXME - fix statements list
+// stmtslist: (vardecl | stmt) stmtslist | ;
+//>>>> change in 11.03
+stmtslist: stmtprime | ;
+stmtprime: stmts stmtprime | stmts;
+stmts: vardecl | stmt;
+//>>>> change in 11.3
+stmt: block_stmt
+		| assign_stmt
+		| if_stmt 
+		| call_stmt
+		| for_stmt 
+		| while_stmt 
+		| do_while_stmt 
+		| break_stmt 
+		| continue_stmt 
+		| return_stmt
+		| special_func_callstmt
+		;
+assign_stmt: (ID | int_term6) OP_EQ expr SEMI;
+//if-else
+if_stmt: IF LB expr RB stmt | IF LB expr RB stmt ELSE stmt;
+
+//for
+for_stmt: FOR LB (ID | int_term6) OP_EQ init_expr COMMA cond_expr COMMA update_expr RB stmt;
+//FIXME - scalar var
+// scalar_var: ID;
+
+//while
+while_stmt: WHILE LB cond_expr RB stmt;
+
+//do-while
+// have "{}" ?
+do_while_stmt: DO LP stmt RP WHILE LB cond_expr RB SEMI;
+
+//break
+break_stmt: BREAK SEMI;
+
+//continue
+continue_stmt: CONTINUE SEMI;
+
+//return
+return_stmt: RETURN SEMI | RETURN expr SEMI;
+
+//call a function
+call_stmt: special_func_callstmt | ID LB exprlist RB SEMI;
+
+//block statements
+block_stmt: LP stmtslist RP;
+
+
+/* EXPERESSION -------------------------------*/
 exprlist: exprprime | ;
 exprprime: expr COMMA exprprime | expr;
 
@@ -76,66 +139,13 @@ int_term4: OP_NOT int_term4 | int_term5;
 
 int_term5: OP_MINUS int_term5 | int_term6; // op_type: sign example: -4
 int_term6: int_term7 LC nonempty_exprlist RC | int_term7;
-int_term7: special_func_super | special_func_read | arraylit | INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID | subexpr | callexpr;
+int_term7: special_func_super | special_func_read | arraylit 
+			| INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID 
+			| subexpr | callexpr;
 
 subexpr: LB expr RB;
-
-//special functions
-special_func_callstmt: (special_func_read | special_func_print | special_func_super) SEMI;
-special_func_read: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB;
-special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
-special_func_super: SUPER_FUNC LB exprlist RB;
-
-
 callexpr: ID LB exprlist RB;
-
-
-//statements
-//FIXME - fix statements list
-stmtslist: (vardecl | stmt) stmtslist | ;
-stmt: assign_stmt
-		| if_stmt 
-		| for_stmt 
-		| while_stmt 
-		| do_while_stmt 
-		| break_stmt 
-		| continue_stmt 
-		| return_stmt
-		| block_stmt
-		| special_func_callstmt
-		| call_stmt
-		;
-assign_stmt: (ID | int_term6) OP_EQ expr SEMI;
-//if-else
-if_stmt: IF LB expr RB stmt (ELSE stmt)?;
-
-//for
-for_stmt: FOR LB (ID | int_term6) OP_EQ init_expr COMMA cond_expr COMMA update_expr RB stmt;
-//FIXME - scalar var
-// scalar_var: ID;
 init_expr: expr; cond_expr: expr; update_expr: expr;
-
-//while
-while_stmt: WHILE LB cond_expr RB stmt;
-
-//do-while
-do_while_stmt: DO stmt WHILE LB cond_expr RB SEMI;
-
-//break
-break_stmt: BREAK SEMI;
-
-//continue
-continue_stmt: CONTINUE SEMI;
-
-//return
-return_stmt: RETURN expr? SEMI;
-
-//call a function
-call_stmt: ID LB exprlist RB SEMI;
-
-//block statements
-block_stmt: LP stmtslist RP;
-
 
 
 
@@ -153,6 +163,7 @@ atomic_type: BOOL
 				| STR
 				;
 
+idlist: (ID COMMA) idlist | ID;
 
 
 //variables decle
@@ -214,7 +225,6 @@ OP_GREA_OR_EQ: '>=';
 //Checkcommit
 //Literals
 BOOLLIT: 'true' | 'false';
-idlist: (ID COMMA) idlist | ID;
 ID: [a-zA-Z_][a-zA-Z0-9_]*;
 
 FLOATLIT: (INTPART? DECPART EXPPART | INTPART DECPART? EXPPART | INTPART DECPART EXPPART?) {self.text = self.text.replace("_", "")};
