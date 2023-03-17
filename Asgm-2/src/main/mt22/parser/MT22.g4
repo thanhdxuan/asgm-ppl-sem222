@@ -107,15 +107,20 @@ stmt: assign_stmt
 		| special_func_callstmt
 		| call_stmt
 		;
-assign_stmt: (ID | int_term6) OP_EQ expr SEMI;
+assign_stmt: ID OP_EQ expr SEMI 
+          | int_term6 OP_EQ expr SEMI;
 //if-else
-if_stmt: IF LB expr RB stmt (ELSE stmt)?;
+if_stmt: IF LB expr RB stmt
+        | IF LB expr RB stmt ELSE stmt;
 
 //for
-for_stmt: FOR LB (ID | int_term6) OP_EQ init_expr COMMA cond_expr COMMA update_expr RB stmt;
+for_stmt: FOR LB init_expr COMMA cond_expr COMMA update_expr RB stmt;
 //FIXME - scalar var
 // scalar_var: ID;
-init_expr: expr; cond_expr: expr; update_expr: expr;
+init_expr: ID OP_EQ expr 
+          | int_term6 OP_EQ expr;
+cond_expr: expr; 
+update_expr: expr;
 
 //while
 while_stmt: WHILE LB cond_expr RB stmt;
@@ -141,7 +146,9 @@ block_stmt: LP stmtslist RP;
 
 
 
-arraylit: LP (exprlist | arraylit | ) RP;
+arraylit: LP exprlist RP
+        | LP arraylit RP
+        | LP RP;
 //{{1,2,3},{7,8,7},{8,8,8}}
 
 //array type
