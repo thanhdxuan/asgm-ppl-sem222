@@ -21,15 +21,16 @@ vardecl: var_shortform | var_fullform;
 var_shortform: idlist COLON (atomic_type | AUTO | array_type) SEMI;
 // var_fullform: idlist COLON (atomic_type | AUTO) OP_EQ nonempty_exprlist  SEMI;
 var_fullform: helpper SEMI;
-base: ID COLON atomic_type OP_EQ expr;
+base: ID COLON (atomic_type | array_type | AUTO) OP_EQ expr;
 helpper: ID COMMA helpper COMMA expr | base;
 
 // ( {$i<$n}? INT {$i=$i+1;} )*
 // FIXME: a,b: array [2, 2, 3] of integer = {{3,2},{1,2}}, {{1,2},{1,2}};
 //class A: private B {}
 //[inherit]? [out]? <identifier>: <type>
-paramlist: param COMMA paramlist | param;
-param: INHERIT? OUT? ID COLON (atomic_type | AUTO) | ;
+param: INHERIT? OUT? ID COLON (atomic_type | AUTO | array_type);
+paramlist: paramprime | ;
+paramprime: param COMMA paramprime | param;
 
 
 
@@ -90,7 +91,10 @@ callexpr: ID LB exprlist RB;
 
 //statements
 //FIXME - fix statements list
-stmtslist: (vardecl | stmt) stmtslist | ;
+stmtslist: stmtprime | ;
+stmtprime: stmts stmtprime | stmts;
+stmts: vardecl | stmt;
+//>>>> change in 11.3
 stmt: assign_stmt
 		| if_stmt 
 		| for_stmt 
@@ -117,7 +121,7 @@ init_expr: expr; cond_expr: expr; update_expr: expr;
 while_stmt: WHILE LB cond_expr RB stmt;
 
 //do-while
-do_while_stmt: DO stmt WHILE LB cond_expr RB SEMI;
+do_while_stmt: DO block_stmt WHILE LB cond_expr RB SEMI;
 
 //break
 break_stmt: BREAK SEMI;
@@ -184,7 +188,7 @@ INHERIT: 'inherit';
 READ_INT: 'readInteger';
 PRINT_INT: 'printInteger';
 READ_FLOAT: 'readFloat';
-PRINT_FLOAT: 'writeFloat';
+PRINT_FLOAT: 'printFloat';
 READ_BOOL: 'readBoolean';
 PRINT_BOOL: 'printBoolean';
 READ_STR: 'readString';
