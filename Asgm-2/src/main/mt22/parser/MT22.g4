@@ -28,25 +28,23 @@ helpper: ID COMMA helpper COMMA expr | base;
 // FIXME: a,b: array [2, 2, 3] of integer = {{3,2},{1,2}}, {{1,2},{1,2}};
 //class A: private B {}
 //[inherit]? [out]? <identifier>: <type>
-param: INHERIT? OUT? ID COLON (atomic_type | AUTO | array_type);
 paramlist: paramprime | ;
 paramprime: param COMMA paramprime | param;
 
+//param: INHERIT? OUT? ID COLON (atomic_type | AUTO | array_type);
+param: INHERIT? OUT? ID COLON func_return_type;
 
 
-func_return_type: INT
-						| VOID
-						| FLOAT
-						| BOOL
-						| STR
-						| AUTO
-						| ARRAY
+func_return_type: atomic_type
+            | AUTO
+            | array_type
+            | VOID
 						;
 //Arithmetic operators
-LOGIC_OP: OP_AND
+logic_op: OP_AND
 			| OP_OR;
 
-RELATION_OP: OP_EQ_EQ
+relation_op: OP_EQ_EQ
 				| OP_INEQ
 				| OP_LESS
 				| OP_LESS_OR_EQ
@@ -67,14 +65,14 @@ nonempty_exprlist: expr COMMA nonempty_exprlist | expr;
 //expression
 expr: str_operands OP_STR_CONCAT str_operands | str_operands; //none - associative
 str_operands: int_expr;
-int_expr: int_term1 RELATION_OP int_term1 | int_term1;
-int_term1: int_term1 LOGIC_OP int_term2 | int_term2;
+int_expr: int_term1 relation_op int_term1 | int_term1;
+int_term1: int_term1 logic_op int_term2 | int_term2;
 int_term2: int_term2 (OP_ADD | OP_MINUS) int_term3 | int_term3;
 int_term3: int_term3 (OP_MUL | OP_MOD | OP_DIV) int_term4 | int_term4;
 int_term4: OP_NOT int_term4 | int_term5;
 
 int_term5: OP_MINUS int_term5 | int_term6; // op_type: sign example: -4
-int_term6: int_term7 LC nonempty_exprlist RC | int_term7;
+int_term6: int_term7 LC nonempty_exprlist RC | int_term7; //index operator
 int_term7: special_func_super | special_func_read | arraylit | INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID | subexpr | callexpr;
 
 subexpr: LB expr RB;
@@ -107,7 +105,7 @@ stmt: assign_stmt
 		| special_func_callstmt
 		| call_stmt
 		;
-assign_stmt: ID OP_EQ expr SEMI 
+assign_stmt: ID OP_EQ expr SEMI
           | int_term6 OP_EQ expr SEMI;
 //if-else
 if_stmt: IF LB expr RB stmt
