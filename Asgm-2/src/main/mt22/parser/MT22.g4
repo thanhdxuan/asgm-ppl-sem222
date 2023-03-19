@@ -73,15 +73,19 @@ int_term4: OP_NOT int_term4 | int_term5;
 
 int_term5: OP_MINUS int_term5 | int_term6; // op_type: sign example: -4
 int_term6: int_term7 LC nonempty_exprlist RC | int_term7; //index operator
-int_term7: special_func_super | special_func_read | arraylit | INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID | subexpr | callexpr;
+int_term7: special_func_super_expr | special_func_read_expr | special_func_print_expr | arraylit | INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID | subexpr | callexpr;
 
 subexpr: LB expr RB;
 
+special_func_read_expr: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB;
+special_func_print_expr: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
+special_func_super_expr: SUPER_FUNC LB exprlist RB;
+
 //special functions
-special_func_callstmt: (special_func_read | special_func_print | special_func_super) SEMI;
-special_func_read: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB;
-special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
-special_func_super: SUPER_FUNC LB exprlist RB;
+special_func_callstmt: (specialfunc_read | specialfunc_print | specialfunc_super) SEMI;
+specialfunc_read: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB;
+specialfunc_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
+specialfunc_super: SUPER_FUNC LB exprlist RB;
 
 
 callexpr: ID LB exprlist RB;
