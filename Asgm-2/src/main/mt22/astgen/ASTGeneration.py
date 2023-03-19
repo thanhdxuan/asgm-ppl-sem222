@@ -293,8 +293,7 @@ class ASTGeneration(MT22Visitor):
             fucname = ctx.READ_STR().getText()
         else:
             fucname = ctx.PREVENT_DEFAUT().getText()
-        exprlist = [self.visit(ctx.expr())]
-        return FuncCall(fucname, exprlist)
+        return FuncCall(fucname, [])
 
     # special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
     def visitSpecial_func_print_expr(self, ctx:MT22Parser.Special_func_print_exprContext):
@@ -304,7 +303,7 @@ class ASTGeneration(MT22Visitor):
         elif ctx.PRINT_BOOL():
             fucname = ctx.PRINT_BOOL().getText()
         elif ctx.PRINT_FLOAT():
-            fucname = ctx.PRINT_BOOL().getText()
+            fucname = ctx.PRINT_FLOAT().getText()
         else:
             fucname = ctx.PRINT_STR().getText()
         exprlist = [self.visit(ctx.expr())]
@@ -338,20 +337,19 @@ class ASTGeneration(MT22Visitor):
             fucname = ctx.READ_STR().getText()
         else:
             fucname = ctx.PREVENT_DEFAUT().getText()
-        exprlist = [self.visit(ctx.expr())]
-        return CallStmt(fucname, exprlist)
+        return CallStmt(fucname, [])
 
     # special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
     def visitSpecialfunc_print(self, ctx:MT22Parser.Specialfunc_printContext):
-        fucname = None
-        if ctx.PRINT_INT():
-            fucname = ctx.PRINT_INT().getText()
-        elif ctx.PRINT_BOOL():
-            fucname = ctx.PRINT_BOOL().getText()
-        elif ctx.PRINT_FLOAT():
-            fucname = ctx.PRINT_BOOL().getText()
-        else:
-            fucname = ctx.PRINT_STR().getText()
+        fucname = ctx.getChild(0).getText()
+        # if ctx.PRINT_INT():
+        #     fucname = ctx.PRINT_INT().getText()
+        # elif ctx.PRINT_BOOL():
+        #     fucname = ctx.PRINT_BOOL().getText()
+        # elif ctx.PRINT_FLOAT():
+        #     fucname = ctx.PRINT_FLOAT().getText()
+        # else:
+        #     fucname = ctx.PRINT_STR().getText()
         exprlist = [self.visit(ctx.expr())]
         return CallStmt(fucname, exprlist)
 
