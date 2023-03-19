@@ -85,7 +85,7 @@ class ASTGeneration(MT22Visitor):
         helpper[1] = helpper[1] + [expr]
         return helpper
         # a, .. , expr
-    # param: INHERIT? OUT? ID COLON func_return_type;
+    # param: INHERIT? OUT? ID COLON param_typ;
     def visitParam(self, ctx:MT22Parser.ParamContext):
         inherit = False
         out = False
@@ -94,9 +94,17 @@ class ASTGeneration(MT22Visitor):
             inherit = True
         if ctx.OUT():
             out = True
-        typ = self.visit(ctx.func_return_type())
+        typ = self.visit(ctx.param_typ())
         return ParamDecl(name, typ, out, inherit)
 
+    # param_typ: atomic_type | AUTO | array_type;
+    def visitParam_typ(self, ctx:MT22Parser.Param_typContext):
+        if ctx.atomic_type():
+            return self.visit(ctx.atomic_type())
+        elif ctx.AUTO():
+            return AutoType()
+        else:
+            return self.visit(ctx.array_type())
 
     # paramlist: paramprime | ;
     def visitParamlist(self, ctx:MT22Parser.ParamlistContext):
@@ -230,10 +238,10 @@ class ASTGeneration(MT22Visitor):
             return UnExpr(op, val)
         return self.visit(ctx.int_term6())
 
-    # int_term6: int_term7 LC nonempty_exprlist RC | int_term7;
+    # int_term6: ID LC nonempty_exprlist RC | int_term7; //index operator
     def visitInt_term6(self, ctx:MT22Parser.Int_term6Context): #index operators - array cell
         if ctx.LC():
-            name = self.visit(ctx.int_term7())
+            name = ctx.ID().getText()
             expr = self.visit(ctx.nonempty_exprlist())
             return ArrayCell(name, expr)
         return self.visit(ctx.int_term7())
@@ -411,7 +419,8 @@ class ASTGeneration(MT22Visitor):
             return self.visit(ctx.block_stmt())
         elif ctx.special_func_callstmt():
             return self.visit(ctx.special_func_callstmt())
-        else: return self.visit(ctx.call_stmt())
+        else:
+            return self.visit(ctx.call_stmt())
 
     # assign_stmt: ID OP_EQ expr SEMI 
           #| int_term6 OP_EQ expr SEMI
