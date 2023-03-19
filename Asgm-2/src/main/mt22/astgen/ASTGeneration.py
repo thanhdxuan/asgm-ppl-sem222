@@ -70,7 +70,7 @@ class ASTGeneration(MT22Visitor):
         elif ctx.AUTO():
             typ = AutoType()
         else:
-            typ = ArrayType()
+            typ = self.visit(ctx.array_type())
         expr = self.visit(ctx.expr())
         return [[name], [expr], typ]
 
@@ -254,9 +254,9 @@ class ASTGeneration(MT22Visitor):
         if ctx.INTLIT():
             return IntegerLit(int(ctx.INTLIT().getText()))
         elif ctx.FLOATLIT():
-            fstr = ctx.FloatType().getText()
+            fstr = ctx.FLOATLIT().getText()
             if fstr[0] == '.':
-                fstr = "0"
+                fstr = '0' + fstr
             return FloatLit(float(fstr))
         elif ctx.STRINGLIT():
             return StringLit(ctx.STRINGLIT().getText())
@@ -383,7 +383,7 @@ class ASTGeneration(MT22Visitor):
     # stmts: vardecl | stmt
     def visitStmts(self, ctx:MT22Parser.StmtsContext):
         if ctx.vardecl():
-            return [self.visit(ctx.vardecl())] #[Vardecl(..)]
+            return self.visit(ctx.vardecl()) #[Vardecl(..)]
         return [self.visit(ctx.stmt())] #[Stmt(..)]
 
 
