@@ -6,48 +6,85 @@ from AST import *
 class ASTGeneration(MT22Visitor):
     # program: decl EOF;
     def visitProgram(self, ctx: MT22Parser.ProgramContext):
-        return Program([])
+        decl = self.visit(ctx.decl())
+        return Program(decl)
     
     # decl: (funcdecl | vardecl) decl | ;
     def visitDecl(self, ctx:MT22Parser.DeclContext):
-        return self.visitChildren(ctx)
-
+        if ctx.getChildCount() == 0:
+            return []
+        decl = None
+        if ctx.funcdecl():
+            decl = [self.visit(ctx.funcdecl())]
+        else:
+            decl = [self.visit(ctx.vardecl())]
+        return decl + self.visit(ctx.decl())
 
     # funcdecl: ID COLON FUNCT func_return_type LB paramlist RB (INHERIT ID)? body;
     def visitFuncdecl(self, ctx:MT22Parser.FuncdeclContext):
-        return self.visitChildren(ctx)
-
-
+        name = ctx.ID().getText()
+        typ = self.visit(ctx.func_return_type())
+        paramlst = self.visit(ctx.paramlist())
+        inherit_id = None
+        if ctx.INHERIT():
+            inherit_id = ctx.ID().getText()
+        body = self.visit(ctx.body())
+        return FuncDecl(name, typ, paramlst, inherit_id, body)
     # body: block_stmt;
     def visitBody(self, ctx:MT22Parser.BodyContext):
-        return self.visitChildren(ctx)
-
+        return self.visit(ctx.block_stmt())
 
     # vardecl: var_shortform | var_fullform;
     def visitVardecl(self, ctx:MT22Parser.VardeclContext):
-        return self.visitChildren(ctx)
-
-
+        return self.visit(ctx.getChild(0))
     # var_shortform: idlist COLON (atomic_type | AUTO | array_type) SEMI;
     def visitVar_shortform(self, ctx:MT22Parser.Var_shortformContext):
-        return self.visitChildren(ctx)
+        ids = self.visit(ctx.idlist()) #[Id(..), Id(..)] 
+        typ = None #Type()
+        if ctx.atomic_type():
+            typ = self.visit(ctx.atomic_type())
+        elif ctx.AUTO():
+            typ = AutoType()
+        else:
+            typ = ArrayType()
+        return [VarDecl(name, typ) for name in ids]
 
 
     # var_fullform: helpper SEMI;
     def visitVar_fullform(self, ctx:MT22Parser.Var_fullformContext):
-        return self.visitChildren(ctx)
+        lst = self.visit(ctx.helpper())
+        typ = lst[2] # Type
+        namelst = lst[0] # [a, b, c]
+        exprlst = lst[1] # [1, 2, 3] => [VarDecl(a, Type, 1)]
 
+        return [VarDecl(namelst[0][i], typ, exprlst[0][i]) for i in range(len(namelst))]
+        # a, b, c: integer = 1, 2, 3
+        # [[a, 3], [b, 2], [c, int, 1]]
 
     # base: ID COLON (atomic_type | array_type | AUTO) OP_EQ expr;
     def visitBase(self, ctx:MT22Parser.BaseContext):
-        return self.visitChildren(ctx)
-
+        name = ctx.ID().getText()
+        typ = None #Type()
+        if ctx.atomic_type():
+            typ = self.visit(ctx.atomic_type())
+        elif ctx.AUTO():
+            typ = AutoType()
+        else:
+            typ = ArrayType()
+        expr = self.visit(ctx.expr())
+        return [[name], [expr], typ]
 
     # helpper: ID COMMA helpper COMMA expr | base;
     def visitHelpper(self, ctx:MT22Parser.HelpperContext):
-        return self.visitChildren(ctx)
-
-
+        if ctx.getChildCount() == 1:
+            return self.visit(ctx.base())
+        name = ctx.ID().getText() #Id()
+        expr = self.visit(ctx.expr()) #Id()
+        helpper = self.visit(ctx.helpper()) #[[name], [expr], typ]
+        helpper[0] = helpper[0] + [name]
+        helpper[1] = [expr] + helpper[1]
+        return helpper
+        # a, .. , expr
     # param: INHERIT? OUT? ID COLON func_return_type;
     def visitParam(self, ctx:MT22Parser.ParamContext):
         inherit = False
