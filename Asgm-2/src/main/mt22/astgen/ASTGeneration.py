@@ -15,21 +15,21 @@ class ASTGeneration(MT22Visitor):
             return []
         decl = None
         if ctx.funcdecl():
-            decl = [self.visit(ctx.funcdecl())]
+            decl = self.visit(ctx.funcdecl())
         else:
-            decl = [self.visit(ctx.vardecl())]
+            decl = self.visit(ctx.vardecl())
         return decl + self.visit(ctx.decl())
 
     # funcdecl: ID COLON FUNCT func_return_type LB paramlist RB (INHERIT ID)? body;
     def visitFuncdecl(self, ctx:MT22Parser.FuncdeclContext):
-        name = ctx.ID().getText()
+        name = ctx.ID(0).getText()
         typ = self.visit(ctx.func_return_type())
         paramlst = self.visit(ctx.paramlist())
         inherit_id = None
         if ctx.INHERIT():
-            inherit_id = ctx.ID().getText()
+            inherit_id = ctx.ID(1).getText()
         body = self.visit(ctx.body())
-        return FuncDecl(name, typ, paramlst, inherit_id, body)
+        return [FuncDecl(name, typ, paramlst, inherit_id, body)]
     # body: block_stmt;
     def visitBody(self, ctx:MT22Parser.BodyContext):
         return self.visit(ctx.block_stmt())
@@ -39,14 +39,14 @@ class ASTGeneration(MT22Visitor):
         return self.visit(ctx.getChild(0))
     # var_shortform: idlist COLON (atomic_type | AUTO | array_type) SEMI;
     def visitVar_shortform(self, ctx:MT22Parser.Var_shortformContext):
-        ids = self.visit(ctx.idlist()) #[Id(..), Id(..)] 
+        ids = self.visit(ctx.idlist()) #['x', 'y',...] 
         typ = None #Type()
         if ctx.atomic_type():
             typ = self.visit(ctx.atomic_type())
         elif ctx.AUTO():
             typ = AutoType()
-        else:
-            typ = ArrayType()
+        else: #array
+            typ = self.visit(ctx.array_type())
         return [VarDecl(name, typ) for name in ids]
 
 
@@ -57,7 +57,7 @@ class ASTGeneration(MT22Visitor):
         namelst = lst[0] # [a, b, c]
         exprlst = lst[1] # [1, 2, 3] => [VarDecl(a, Type, 1)]
 
-        return [VarDecl(namelst[0][i], typ, exprlst[0][i]) for i in range(len(namelst))]
+        return [VarDecl(namelst[i], typ, exprlst[i]) for i in range(len(namelst))]
         # a, b, c: integer = 1, 2, 3
         # [[a, 3], [b, 2], [c, int, 1]]
 
@@ -78,11 +78,11 @@ class ASTGeneration(MT22Visitor):
     def visitHelpper(self, ctx:MT22Parser.HelpperContext):
         if ctx.getChildCount() == 1:
             return self.visit(ctx.base())
-        name = ctx.ID().getText() #Id()
-        expr = self.visit(ctx.expr()) #Id()
+        name = ctx.ID().getText() #'x','y','z',...
+        expr = self.visit(ctx.expr())
         helpper = self.visit(ctx.helpper()) #[[name], [expr], typ]
-        helpper[0] = helpper[0] + [name]
-        helpper[1] = [expr] + helpper[1]
+        helpper[0] = [name] + helpper[0]
+        helpper[1] = helpper[1] + [expr]
         return helpper
         # a, .. , expr
     # param: INHERIT? OUT? ID COLON func_return_type;
@@ -105,8 +105,8 @@ class ASTGeneration(MT22Visitor):
     # paramprime: param COMMA paramprime | param;
     def visitParamprime(self, ctx:MT22Parser.ParamprimeContext):
         if ctx.getChildCount() == 1:
-            return [self.visit(ctx.param(0))]
-        return [self.visit(ctx.param(0))] + self.visit(ctx.paramprime())
+            return [self.visit(ctx.param())]
+        return [self.visit(ctx.param())] + self.visit(ctx.paramprime())
     #   func_return_type: atomic_type
     #               | AUTO
     #               | array_type
@@ -114,7 +114,7 @@ class ASTGeneration(MT22Visitor):
     #   						;
     def visitFunc_return_type(self, ctx:MT22Parser.Func_return_typeContext):
         if ctx.atomic_type():
-            return self.visi(ctx.atomic_type())
+            return self.visit(ctx.atomic_type())
         elif ctx.VOID():
             return VoidType()
         elif ctx.AUTO():
@@ -145,14 +145,14 @@ class ASTGeneration(MT22Visitor):
     # exprprime: expr COMMA exprprime | expr;
     def visitExprprime(self, ctx:MT22Parser.ExprprimeContext):
         if ctx.getChildCount() == 1:
-            return [self.visit(ctx.expr(0))]
-        return [self.visit(ctx.expr(0))] + self.visit(ctx.exprprime())
+            return [self.visit(ctx.expr())]
+        return [self.visit(ctx.expr())] + self.visit(ctx.exprprime())
 
     # nonempty_exprlist: expr COMMA nonempty_exprlist | expr;
     def visitNonempty_exprlist(self, ctx:MT22Parser.Nonempty_exprlistContext):
         if ctx.COMMA():
-            return [self.visit(ctx.expr(0))] + self.visit(ctx.nonempty_exprlist())
-        return [self.visit(ctx.expr(0))]
+            return [self.visit(ctx.expr())] + self.visit(ctx.nonempty_exprlist())
+        return [self.visit(ctx.expr())]
 
     # expr: str_operands OP_STR_CONCAT str_operands | str_operands; //none - associative
     def visitExpr(self, ctx:MT22Parser.ExprContext):
@@ -171,7 +171,7 @@ class ASTGeneration(MT22Visitor):
     def visitInt_expr(self, ctx:MT22Parser.Int_exprContext):
         if ctx.getChildCount() == 1:
             return self.visit(ctx.int_term1(0))
-        op = self.visit(ctx.logic_op())
+        op = self.visit(ctx.relation_op())
         left = self.visit(ctx.int_term1(0))
         right = self.visit(ctx.int_term1(1))
         return BinExpr(op, left, right)
@@ -179,7 +179,7 @@ class ASTGeneration(MT22Visitor):
     # int_term1: int_term1 logic_op int_term2 | int_term2;
     def visitInt_term1(self, ctx:MT22Parser.Int_term1Context):
         if ctx.getChildCount() == 1:
-            return self.visit(ctx.int_term2(0))
+            return self.visit(ctx.int_term2())
         op = self.visit(ctx.logic_op())
         left = self.visit(ctx.int_term1())
         right = self.visit(ctx.int_term2())
@@ -187,8 +187,8 @@ class ASTGeneration(MT22Visitor):
 
     # int_term2: int_term2 (OP_ADD | OP_MINUS) int_term3 | int_term3;
     def visitInt_term2(self, ctx:MT22Parser.Int_term2Context):
-        if ctx.getChildCount():
-            return self.visit(ctx.int_term3(0))
+        if ctx.getChildCount() == 1:
+            return self.visit(ctx.int_term3())
         op = None
         if ctx.OP_ADD():
             op = ctx.OP_ADD().getText()
@@ -201,7 +201,7 @@ class ASTGeneration(MT22Visitor):
     # int_term3: int_term3 (OP_MUL | OP_MOD | OP_DIV) int_term4 | int_term4;
     def visitInt_term3(self, ctx:MT22Parser.Int_term3Context):
         if ctx.getChildCount() == 1:
-            return self.visit(ctx.int_term4(0))
+            return self.visit(ctx.int_term4())
         op = None
         if ctx.OP_MUL():
             op = ctx.OP_MUL().getText()
@@ -210,7 +210,7 @@ class ASTGeneration(MT22Visitor):
         else:
             op = ctx.OP_DIV().getText()
         left = self.visit(ctx.int_term3())
-        right = self.visit(ctx.int_term4(0))
+        right = self.visit(ctx.int_term4())
         return BinExpr(op, left, right)
 
 
@@ -233,13 +233,13 @@ class ASTGeneration(MT22Visitor):
     # int_term6: int_term7 LC nonempty_exprlist RC | int_term7;
     def visitInt_term6(self, ctx:MT22Parser.Int_term6Context): #index operators - array cell
         if ctx.LC():
-            name = self.visit(ctx.int_term7(0))
+            name = self.visit(ctx.int_term7())
             expr = self.visit(ctx.nonempty_exprlist())
-            return ArrayCell(str(name), expr)
-        return self.visit(ctx.int_term7(0))
+            return ArrayCell(name, expr)
+        return self.visit(ctx.int_term7())
             
 
-    # int_term7: special_func_super | special_func_read
+    # int_term7: special_func_super_expr | special_func_read_expr | special_func_print_expr
     #           | arraylit | INTLIT | FLOATLIT | STRINGLIT 
     #           | BOOLLIT | ID | subexpr | callexpr;
     def visitInt_term7(self, ctx:MT22Parser.Int_term7Context):
@@ -262,26 +262,18 @@ class ASTGeneration(MT22Visitor):
             return self.visit(ctx.callexpr())
         elif ctx.arraylit():
             return self.visit(ctx.arraylit())
-        elif ctx.special_func_super():
-            return self.visit(ctx.special_func_super())
+        elif ctx.special_func_super_expr():
+            return self.visit(ctx.special_func_super_expr())
+        elif ctx.special_func_read_expr():
+            return self.visit(ctx.special_func_read_expr())
         else:
-            return self.visit(ctx.special_func_read())
+            return self.visit(ctx.special_func_print_expr())
 
     # subexpr: LB expr RB
     def visitSubexpr(self, ctx:MT22Parser.SubexprContext):
         return self.visit(ctx.expr())
 
-
-    # special_func_callstmt: (special_func_read | special_func_print | special_func_super) SEMI
-    def visitSpecial_func_callstmt(self, ctx:MT22Parser.Special_func_callstmtContext):
-        if ctx.special_func_read():
-            return self.visit(ctx.special_func_read())
-        elif self.visit(ctx.special_func_print()):
-            return self.visit(ctx.special_func_print())
-        return self.visit(ctx.special_func_super())
-
-    # special_func_read: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB
-    def visitSpecial_func_read(self, ctx:MT22Parser.Special_func_readContext):
+    def visitSpecial_func_read_expr(self, ctx:MT22Parser.Special_func_read_exprContext):
         fucname = None
         if ctx.READ_INT():
             fucname = ctx.READ_INT().getText()
@@ -293,11 +285,11 @@ class ASTGeneration(MT22Visitor):
             fucname = ctx.READ_STR().getText()
         else:
             fucname = ctx.PREVENT_DEFAUT().getText()
-        exprlist = self.visit(ctx.expr())
+        exprlist = [self.visit(ctx.expr())]
         return FuncCall(fucname, exprlist)
 
     # special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
-    def visitSpecial_func_print(self, ctx:MT22Parser.Special_func_printContext):
+    def visitSpecial_func_print_expr(self, ctx:MT22Parser.Special_func_print_exprContext):
         fucname = None
         if ctx.PRINT_INT():
             fucname = ctx.PRINT_INT().getText()
@@ -307,14 +299,59 @@ class ASTGeneration(MT22Visitor):
             fucname = ctx.PRINT_BOOL().getText()
         else:
             fucname = ctx.PRINT_STR().getText()
-        exprlist = self.visit(ctx.expr())
+        exprlist = [self.visit(ctx.expr())]
         return FuncCall(fucname, exprlist)
 
     # special_func_super: SUPER_FUNC LB exprlist RB
-    def visitSpecial_func_super(self, ctx:MT22Parser.Special_func_superContext):
+    def visitSpecial_func_super_expr(self, ctx:MT22Parser.Special_func_super_exprContext):
         fucname = ctx.SUPER_FUNC().getText()
         exprlist = self.visit(ctx.exprlist())
         return FuncCall(fucname, exprlist)
+
+    # special_func_callstmt: (specialfunc_read | specialfunc_print | specialfunc_super) SEMI
+    def visitSpecial_func_callstmt(self, ctx:MT22Parser.Special_func_callstmtContext):
+        if ctx.specialfunc_read():
+            return self.visit(ctx.specialfunc_read())
+        elif ctx.specialfunc_print():
+            return self.visit(ctx.specialfunc_print())
+        else:
+            return self.visit(ctx.specialfunc_super())
+
+    # special_func_read: (READ_INT | READ_FLOAT | READ_BOOL | READ_STR | PREVENT_DEFAUT) LB RB
+    def visitSpecialfunc_read(self, ctx:MT22Parser.Specialfunc_readContext):
+        fucname = None
+        if ctx.READ_INT():
+            fucname = ctx.READ_INT().getText()
+        elif ctx.READ_FLOAT():
+            fucname = ctx.READ_FLOAT().getText()
+        elif ctx.READ_BOOL():
+            fucname = ctx.READ_BOOL().getText()
+        elif ctx.READ_STR():
+            fucname = ctx.READ_STR().getText()
+        else:
+            fucname = ctx.PREVENT_DEFAUT().getText()
+        exprlist = [self.visit(ctx.expr())]
+        return CallStmt(fucname, exprlist)
+
+    # special_func_print: (PRINT_INT | PRINT_BOOL | PRINT_FLOAT | PRINT_STR) LB expr RB;
+    def visitSpecialfunc_print(self, ctx:MT22Parser.Specialfunc_printContext):
+        fucname = None
+        if ctx.PRINT_INT():
+            fucname = ctx.PRINT_INT().getText()
+        elif ctx.PRINT_BOOL():
+            fucname = ctx.PRINT_BOOL().getText()
+        elif ctx.PRINT_FLOAT():
+            fucname = ctx.PRINT_BOOL().getText()
+        else:
+            fucname = ctx.PRINT_STR().getText()
+        exprlist = [self.visit(ctx.expr())]
+        return CallStmt(fucname, exprlist)
+
+    # special_func_super: SUPER_FUNC LB exprlist RB
+    def visitSpecialfunc_super(self, ctx:MT22Parser.Specialfunc_superContext):
+        fucname = ctx.SUPER_FUNC().getText()
+        exprlist = self.visit(ctx.exprlist())
+        return CallStmt(fucname, exprlist)
 
     # callexpr: ID LB exprlist RB
     def visitCallexpr(self, ctx:MT22Parser.CallexprContext):
@@ -325,15 +362,15 @@ class ASTGeneration(MT22Visitor):
 
     # stmtslist: stmtprime | ;
     def visitStmtslist(self, ctx:MT22Parser.StmtslistContext):
-        if stmtslist.stmtprime():
+        if ctx.stmtprime():
             return self.visit(ctx.stmtprime())
         return []
 
     # stmtprime: stmts stmtprime | stmts
     def visitStmtprime(self, ctx:MT22Parser.StmtprimeContext):
         if ctx.stmtprime():
-            return self.visit(ctx.stmts(0)) + self.visit(ctx.stmtprime())
-        return self.visit(ctx.stms(0))
+            return self.visit(ctx.stmts()) + self.visit(ctx.stmtprime())
+        return self.visit(ctx.stmts())
     
     # stmts: vardecl | stmt
     def visitStmts(self, ctx:MT22Parser.StmtsContext):
@@ -488,8 +525,8 @@ class ASTGeneration(MT22Visitor):
     # idlist: (ID COMMA) idlist | ID;
     def visitIdlist(self, ctx: MT22Parser.IdlistContext):
         if ctx.getChildCount() == 1:
-            return [Id(ctx.ID().getText())]
-        return [Id(ctx.ID().getText())] + self.visit(ctx.idlist())
+            return [ctx.ID().getText()]
+        return [ctx.ID().getText()] + self.visit(ctx.idlist())
     
     # atomic_type: BOOL
 	#			| INT
