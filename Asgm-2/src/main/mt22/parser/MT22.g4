@@ -31,10 +31,10 @@ helpper: ID COMMA helpper COMMA expr | base;
 paramlist: paramprime | ;
 paramprime: param COMMA paramprime | param;
 
-//param: INHERIT? OUT? ID COLON (atomic_type | AUTO | array_type);
-param: INHERIT? OUT? ID COLON func_return_type;
+param: INHERIT? OUT? ID COLON param_typ;
+// param: INHERIT? OUT? ID COLON func_return_type;
 
-
+param_typ: atomic_type | AUTO | array_type;
 func_return_type: atomic_type
             | AUTO
             | array_type
@@ -72,8 +72,9 @@ int_term3: int_term3 (OP_MUL | OP_MOD | OP_DIV) int_term4 | int_term4;
 int_term4: OP_NOT int_term4 | int_term5;
 
 int_term5: OP_MINUS int_term5 | int_term6; // op_type: sign example: -4
-int_term6: int_term7 LC nonempty_exprlist RC | int_term7; //index operator
-int_term7: special_func_super_expr | special_func_read_expr | special_func_print_expr | arraylit | INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID | subexpr | callexpr;
+int_term6: ID LC nonempty_exprlist RC | int_term7; //index operator
+int_term7: special_func_super_expr | special_func_read_expr | special_func_print_expr 
+				| arraylit | INTLIT | FLOATLIT | STRINGLIT | BOOLLIT | ID | subexpr | callexpr;
 
 subexpr: LB expr RB;
 
