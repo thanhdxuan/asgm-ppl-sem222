@@ -1,0 +1,200 @@
+1. def lstSquare(n):
+   if n == 1: return [n]
+   return lstSquare(n - 1) + [n * n]
+
+2. def lstSquare(n):
+   return [i * i for i in range(1, n + 1)]
+
+3. def lstSquare(n):
+   return list(map(lambda x: x * x, range(1, n + 1)))
+
+4. def dist(lst, n):
+   if len(lst) == 0: return []
+   return [(lst[0], n)] + dist(lst[1:], n)
+
+5. def dist(lst, n):
+   return [(i, n) for i in lst]
+
+6. def dist(lst, n):
+   return list(map(lambda x: (x, n), lst))
+
+7. def lessThan(lst, n):
+   if len(lst) == 0: return []
+   if lst[0] < n: return [lst[0]] + lessThan(lst[1:], n)
+   return lessThan(lst[1:], n)
+
+8. def lessThan(lst, n):
+   return [i for i in lst if i < n]
+
+9. def lessThan(lst, n):
+   return list(filter(lambda x: x < n, lst))
+
+   or
+
+   def lessThan(lst, n):
+   return reduce(lambda prev, curr: prev + [curr] if curr < n else prev, lst, [])
+
+10. def flatten(lst):
+   if len(lst) == 0: return lst
+   return lst[0] + flatten(lst[1:])
+
+11. def flatten(lst):
+   return [j for i in lst for j in i]
+
+   or
+
+   def flatten(lst):
+   return reduce(lambda prev, curr: prev + curr, lst, [])
+
+12. 
+
+13. class Exp: pass
+
+class IntLit:
+   def __init__(self, val):
+      self.val = val
+   def eval(self):
+      return self.val
+
+class FloatLit:
+   def __init__(self, val):
+      self.val = val
+   def eval(self):
+      return self.val
+
+class BinExp(Exp):
+   def __init__(self, opr1, op, opr2):
+      self.left = opr1
+      self.op = op
+      self.right = opr2
+   
+   def eval(self):
+      left = self.left.eval()
+      right = self.right.eval()
+      if self.op == '+': return left + right
+      elif self.op == '-': return left - right
+      elif self.op == '*': return left * right
+      else: return left / right
+
+class UnExp(Exp):
+   def __init__(self, op, opr):
+      self.op = op
+      self.opr = opr
+   def eval(self):
+      value = self.opr.eval()
+      return -value if self.op == '-' else value
+
+14. class Exp: pass
+
+class IntLit:
+   def __init__(self, val):
+      self.val = val
+   def eval(self):
+      return self.val
+   def printPrefix(self):
+      return str(self.val) + ' '
+
+class FloatLit:
+   def __init__(self, val):
+      self.val = val
+   def eval(self):
+      return self.val
+   def printPrefix(self):
+      return str(self.val) + ' '
+
+class BinExp(Exp):
+   def __init__(self, opr1, op, opr2):
+      self.left = opr1
+      self.op = op
+      self.right = opr2
+   
+   def eval(self):
+      left = self.left.eval()
+      right = self.right.eval()
+      if self.op == '+': return left + right
+      elif self.op == '-': return left - right
+      elif self.op == '*': return left * right
+      else: return left / right
+   def printPrefix(self):
+      left = self.left.printPrefix()
+      right = self.right.printPrefix()
+      return str(self.op) + ' ' + str(left) + str(right)
+class UnExp(Exp):
+   def __init__(self, op, opr):
+      self.op = op
+      self.opr = opr
+   def eval(self):
+      value = self.opr.eval()
+      return -value if self.op == '-' else value
+   def printPrefix(self):
+      prefix = self.opr.printPrefix()
+      return str(self.op) + '.' + ' ' + str(prefix)
+
+15. class Exp: pass
+
+class IntLit:
+   def __init__(self, val):
+      self.val = val
+
+class FloatLit:
+   def __init__(self, val):
+      self.val = val
+
+class BinExp(Exp):
+   def __init__(self, opr1, op, opr2):
+      self.left = opr1
+      self.op = op
+      self.right = opr2
+class UnExp(Exp):
+   def __init__(self, op, opr):
+      self.op = op
+      self.opr = opr
+
+class Eval:
+   def __init__(self):
+      pass
+   def visit(self, expr):
+      if isinstance(expr, IntLit):
+         return expr.val
+      elif isinstance(expr, FloatLit):
+         return expr.val
+      elif isinstance(expr, BinExp):
+         left = Eval.visit(self,expr.left)
+         right = Eval.visit(self,expr.right)
+         if expr.op == '+': return left + right
+         elif expr.op == '-': return left - right
+         elif expr.op == '*': return left * right
+         else: return left / right
+      else:
+         value = Eval.visit(self,expr.opr)
+         return -value if expr.op == '-' else value
+
+class PrintPrefix:
+   def visit(self, expr):
+      if isinstance(expr, IntLit):
+         return str(expr.val) + ' '
+      elif isinstance(expr, FloatLit):
+         return str(expr.val) + ' '
+      elif isinstance(expr, BinExp):
+         left = PrintPrefix.visit(self,expr.left)
+         right = PrintPrefix.visit(self,expr.right)
+         return str(expr.op) + ' ' + str(left) + str(right)
+      else:
+         prefix = PrintPrefix.visit(self,expr.opr)
+         return str(expr.op) + '.' + ' ' + str(prefix)
+
+class PrintPostfix:
+   def visit(self, expr):
+      if isinstance(expr, IntLit):
+         return ' ' + str(expr.val)
+      elif isinstance(expr, FloatLit):
+         return ' ' + str(expr.val)
+      elif isinstance(expr, BinExp):
+         left = PrintPostfix.visit(self,expr.left)
+         right = PrintPostfix.visit(self,expr.right)
+         return ' ' + str(left) + str(right) + str(expr.op) 
+      else:
+         prefix = PrintPostfix.visit(self,expr.opr)
+         return ' ' + str(prefix) + str(expr.op) + '.'
+
+16 .
