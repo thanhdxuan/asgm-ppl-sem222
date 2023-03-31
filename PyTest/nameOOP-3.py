@@ -2,6 +2,11 @@ class Type(ABC): pass
 class IntType(Type): pass
 class BoolType(Type): pass
 class FloatType(Type): pass
+class NoType(Type): pass
+class Symbol:
+    def __init__ (self, name, typ):
+        self.name = name
+        self.typ = typ
 class StaticCheck(Visitor):
     #decl:List[VarDecl],stmts:List[Assign]
     def visitProgram(self,ctx:Program,o):
