@@ -1,0 +1,7 @@
+x: integer;
+        y: float;
+        z: function void(k: float) {
+            k: float;
+            x = x + k;
+        }
+        
