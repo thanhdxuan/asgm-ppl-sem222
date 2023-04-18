@@ -2,251 +2,36 @@ from Visitor import Visitor
 from StaticError import *
 from AST import *
 from abc import ABC
-"""
-class StaticError(Exception):
-    pass
 
+class NoType(Type): pass
 
-class Kind(ABC):
-    def __str__(self):
-        return self.__class__.__name__
-
-
-class Variable(Kind):
-    pass
-
-
-class Parameter(Kind):
-    pass
-
-
-class Function(Kind):
-    pass
-
-
-class Identifier(Kind):
-    pass
-
-
-class Redeclared(StaticError):
-    def __init__(self, kind: Kind, identifier: str):
-        self.kind = kind
-        self.identifier = identifier
-
-    def __str__(self):
-        return f"Redeclared {str(self.kind)}: {self.identifier}"
-
-
-class Undeclared(StaticError):
-    def __init__(self, kind: Kind, name: str):
-        self.kind = kind
+class Ultils:
+    def infer(self, name, typ): pass
+class Symbol:
+    def __init__(self, name, typ, inherit):
         self.name = name
-
-    def __str__(self):
-        return f"Undeclared {str(self.kind)}: {self.name}"
-
-
-class Invalid(StaticError):
-    def __init__(self, kind: Kind, name: str):
-        self.kind = kind
-        self.name = name
-
-    def __str__(self):
-        return f"Invalid {str(self.kind)}: {self.name}"
-
-class TypeMismatchInVarDecl(StaticError):
-        def __init__(self, decl):
-            self.decl = decl
-
-        def __str__(self):
-            return f"Type mismatch in Variable Declaration: {str(self.decl)}"
-    
-class TypeMismatchInExpression(StaticError):
-    def __init__(self, expr):
-        self.expr = expr
-
-    def __str__(self):
-        return f"Type mismatch in expression: {str(self.expr)}"
-
-
-class TypeMismatchInStatement(StaticError):
-    def __init__(self, stmt):
-        self.stmt = stmt
-
-    def __str__(self):
-        return f"Type mismatch in statement: {str(self.stmt)}"
-
-
-class MustInLoop(StaticError):
-    def __init__(self, stmt):
-        self.stmt = stmt
-
-    def __str__(self):
-        return f"Must in loop: {str(self.stmt)}"
-
-
-class IllegalArrayLiteral(StaticError):
-    def __init__(self, literal):
-        self.literal = literal
-
-    def __str__(self):
-        return f"Illegal array literal: {str(self.literal)}"
-
-
-class InvalidStatementInFunction(StaticError):
-    def __init__(self, function_name: str):
-        self.function_name = function_name
-
-    def __str__(self):
-        return f"Invalid statement in function: {str(self.function_name)}"
-
-
-class NoEntryPoint(StaticError):
-    def __str__(self):
-        return "No entry point"
-"""
+        self.typ = typ
+        self.inherit = inherit
 class GetEnv(Visitor):
-
-    # op: str, left: Expr, right: Expr
-    def visitBinExpr(self, ast, o):
-        self.visit(ast.left, o)
-        self.visit(ast.right, o)
-    # op: str, val: Expr
-    def visitUnExpr(self, ast, o):
-        self.visit(ast.val, o)
-    # name: str
-    def visitId(self, ast, o):
-        for env in o:
-            for decl in env:
-                if ast.name == decl.name:
-                    return
-        raise Undeclared(Identifier(), ast.name)
-    # name: str, cell: List[Expr]
-    def visitArrayCell(self, ast, o):
-        for env in o:
-            for decl in env:
-                if ast.name == decl.name:
-                    for exp in ast.cell:
-                        self.visit(exp, o)
-                    return
-        raise Undeclared(Identifier(), ast.name)
-
-    def visitIntegerLit(self, ast, param): #val: int
-        return param
-    def visitFloatLit(self, ast, param): #val: float
-        return param
-    def visitStringLit(self, ast, param): #val: str
-        return param
-    def visitBooleanLit(self, ast, param): #val: bool
-        return param
-    # explist: List[Expr]
-    def visitArrayLit(self, ast, o): 
-        for exp in ast.explist:
-            self.visit(exp, o)
-    # name: str, args: List[Expr]
-    def visitFuncCall(self, ast, o):
-        for env in o:
-            for decl in env:
-                if ast.name == decl.name: return
-        raise Undeclared(Function(), ast.name)
-    # lhs: LHS, rhs: Expr //LHS is Id or ArrayCell
-    def visitAssignStmt(self, ast, o):
-        lhs = self.visit(ast.lhs, o)
-        rhs = self.visit(ast.rhs, o)
-    # body: List[Stmt or VarDecl]
-    def visitBlockStmt(self, ast, o):
-        env = o
-        for sq in ast.body:
-            if type(sq) is Stmt:
-                self.visit(sq, env)
-            else:
-                env = self.visit(sq, env)
-
-    # cond: Expr, tstmt: Stmt, fstmt: Stmt or None = None
-    def visitIfStmt(self, ast, o):
-        self.visit(ast.cond, o)
-
-    # init: AssignStmt, cond: Expr, upd: Expr, stmt: Stmt
-    def visitForStmt(self, ast, o):
-        self.visit(ast.init, o)
-        self.visit(ast.cond, o)
-        self.visit(ast.upd, o)
-        self.visit(ast.stmt, o)
-
-    # cond: Expr, stmt: Stmt
-    def visitWhileStmt(self, ast, o):
-        self.visit(ast.cond, o)
-        self.visit(ast.stmt, o)
-
-
-    # cond: Expr, stmt: BlockStmt
-    def visitDoWhileStmt(self, ast, o):
-        self.visit(ast.cond, o)
-        self.visit(ast.stmt, o)
-
-
-
-    def visitBreakStmt(self, ast, param): pass
-    def visitContinueStmt(self, ast, param): pass
-
-
-    # expr: Expr or None = None
-    def visitReturnStmt(self, ast, o):
-        if ast.expr:
-            self.visit(ast.expr, o)
-
-    # name: str, args: List[Expr]
-    def visitCallStmt(self, ast, o):
-        for env in o:
-            for decl in env:
-                if decl.name == ast.name:
-                    for exp in ast.args:
-                        self.visit(exp, o)
-                    return
-        raise Undeclared(Function(), ast.name)
-
     # name: str, typ: Type, init: Expr or None = None
-    def visitVarDecl(self, ast, o):
-        for decl in o[0]:
-            if ast.name == decl.name:
-                kind  = Variable()
-                name = ast.name
-                raise Redeclared(kind, name)
-        o[0] += [ast]
-        return o
+    def visitVarDecl(self, ast, o): return o
 
     # name: str, typ: Type, out: bool = False, inherit: bool = False
     def visitParamDecl(self, ast, o):
-        for decl in o[0]:
-            if ast.name == decl.name:
-                kind = Parameter()
-                name = ast.name
-                raise Redeclared(kind, name)
-        o[0] += [ast]
-        return o
+        o += [Symbol()]
 
     # name: str, return_type: Type, params: List[ParamDecl], inherit: str or None, body: BlockStmt
     def visitFuncDecl(self, ast, o):
-        for decl in o[0]:
-            if ast.name == decl.name:
-                kind = Function()
-                name = ast.name
-                raise Redeclared(kind, name)
-        o[0] += [ast]
-        env = [[]] + o
+        paramdecl = []
         for param in ast.params:
-            env = self.visit(param, env)
-        env = self.visit(ast.body, env)
-        # for decl in env:
-        #     s = [ele.name for ele in decl]
-        #     print(decl)
-        return o
+            paramdecl = self.visit(param, paramdecl)
+        return o + [ast]
     # decls: List[Decl]
     def visitProgram(self, ast, o):
-        o = [[]]
+        o = []
         for decl in ast.decls:
             o = self.visit(decl, o)
-        return o[0]
+        return o
     
 class StaticChecker(Visitor):
     def __init__(self, ast):
@@ -297,7 +82,44 @@ class StaticChecker(Visitor):
     # lhs: LHS, rhs: Expr
     def visitAssignStmt(self, ast, param): pass
     # body: List[Stmt or VarDecl]
-    def visitBlockStmt(self, ast, param): pass
+    def visitBlockStmt(self, ast, o):
+        # o[0]: function name
+        # o[1]: function return type
+        # o[2]: parent_info
+        # o[3]: param_decl
+        # o[4]: local env
+        # o[5]: global env
+        # o[6]: True if....
+        if len(o) == 5 and o[4] is True: #From function inherited
+            env = [[]] + o[1]
+            env[0] += o[0] + o[1]
+            if len(o[2]) == 0:
+                if type(ast.body[0]) is not CallStmt:
+                    self.visit(o[2], o) #visit its super class
+                else:
+                    if ast.body[0].name == "super" and len(ast.body[0].args) != 0:
+                        raise InvalidStatementInFunction(o[0])
+                    elif ast.body[0].name == "super" and len(ast.body[0].args) == 0:
+                        self.visit(o[2], o) #visit its super class
+                    # else: ignore
+            else:
+                if ast.body[0].name == "super" or ast.body[0].name == "preventDefault":
+                    if ast.body[0].name == "super":
+                        if len(ast.body[0].args) != len(o[2].params):
+                            raise InvalidStatementInFunction(o[0])
+                        self.visit(o[2], o) #visit its super class
+                else:
+                    raise InvalidStatementInFunction(o[0])
+            for stmt in ast.body:
+                if type(stmt) is Stmt:
+                env = self.visit(stmt, env)
+                if type(stmt) is VarDecl:
+
+
+        if len(o) == 5 and o[4] is False:
+
+
+
     # cond: Expr, tstmt: Stmt, fstmt: Stmt or None = None
     def visitIfStmt(self, ast, param): pass
     # init: AssignStmt, cond: Expr, upd: Expr, stmt: Stmt
@@ -315,14 +137,62 @@ class StaticChecker(Visitor):
     # name: str, typ: Type, init: Expr or None = None
     def visitVarDecl(self, ast, param): pass
     # name: str, typ: Type, out: bool = False, inherit: bool = False
-    def visitParamDecl(self, ast, param): pass
+    def visitParamDecl(self, ast, o):
+        # o[0]: parent's param declares
+        # o[1]: its function param declares
+        # o[2]: True if this function have a parent
+
+        for param_decl in o[0]:
+            if param_decl.name == ast.name:
+                raise Invalid(Parameter(), ast.name)
+
+        for param_decl in o[1]:
+            if param_decl.name == ast.name:
+                raise Redeclared(Parameter(), ast.name)
+
+        o[1] += [ast]
+        return o[1]
+
     # name: str, return_type: Type, params: List[ParamDecl], inherit: str or None, body: BlockStmt
-    def visitFuncDecl(self, ast, param): pass
+    def visitFuncDecl(self, ast, o):
+        #check Redeclared
+        for decl in o[0][0]:
+            if decl.name == ast.name:
+                raise Redeclared(Function(), ast.name)
+        param_decl = []
+        parent_param = []
+        parent_info = None
+        if ast.inherit is None:
+            for param in params:
+                param_decl = self.visit(ast, ([], param_decl, False)) #False if this function have no parent
+            # self.visit(ast.body, ([], param_decl, o[0], o[1], False)) #o[0]: local env, o[1]: global env, False: is not inherit
+            self.visit(ast.body, (ast.name, ast.return_type, parent_info, param_decl, o[0], o[1], False)) #o[0]: local env, o[1]: global env, True: inherit
+        else:
+            parent_found = False
+            parent_info = None
+            for decl in o[1]:
+                if decl.name == ast.inherit:
+                    parent_found = True
+                    parent_info = decl
+            if not parent_found:
+                raise Undeclared(Function(), ast.inherit)
+            # if its parent is found
+
+            # Get inherit parameter from its parent
+            for param in parent_info.params:
+                if param.inherit is True:
+                    param_param += [param]
+
+            for param in ast.params:
+                param_decl = self.visit(param, (parent_param, param_decl, True)) #True if this func have a parent
+            
+            self.visit(ast.body, (ast.name, ast.return_type, parent_info, param_decl, o[0], o[1], True)) #o[0]: local env, o[1]: global env, True: inherit
+
+            
+            
     # decls: List[Decl]
     def visitProgram(self, ast, o):
-        env = GetEnv().visit(ast, o)
-        # for decl in env:
-        #     if type(decl) is VarDecl:
-        #         print("VarDecl: ", decl.name)
-        #     elif type(decl) is FuncDecl:
-        #         print("FuncDecl: ", decl.name)
+        global_env = GetEnv().visit(ast, [])
+        o = [[]]
+        for decl in ast.decls:
+            o = self.visit(decl, (o, global_env))
