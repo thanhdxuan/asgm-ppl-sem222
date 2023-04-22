@@ -1,0 +1,9 @@
+
+        x: integer = 1;
+        z: function void() inherit y {
+            x: auto = 1.5;
+        }
+        y: function void(a: string, b: integer) {
+            x: auto = 1.5;
+        }
+        

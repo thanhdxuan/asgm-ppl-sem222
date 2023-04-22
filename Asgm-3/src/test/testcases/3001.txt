@@ -1,7 +1,6 @@
-x: integer;
-        y: float;
-        z: function void(k: float) {
-            k: float;
-            x = x + k;
+
+        x: integer = "12";
+        y: float = 1.5;
+        z: function void() {
         }
         

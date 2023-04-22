@@ -1,0 +1,10 @@
+
+        x: integer = 1;
+        z: function void(k: float) inherit y {
+            super("a", 2);
+            x: auto = 1.5;
+        }
+        y: function void(inherit a: string, b: string, inherit a: integer) {
+            x: auto = 1.5;
+        }
+        

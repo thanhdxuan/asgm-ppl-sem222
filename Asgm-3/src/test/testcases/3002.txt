@@ -1,0 +1,6 @@
+
+        x: integer = 12;
+        y: auto;
+        z: function void() {
+        }
+        

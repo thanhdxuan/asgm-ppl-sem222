@@ -1,1 +1,1 @@
-Redeclared Variable: k
+Type mismatch in Variable Declaration: VarDecl(x, IntegerType, StringLit(12))

@@ -8,7 +8,7 @@ for path in ['./test/', './main/mt22/parser/', './main/mt22/utils/', './main/mt2
     sys.path.append(path)
 ANTLR_JAR = os.environ.get('ANTLR_JAR')
 TARGET_DIR = '../target'
-GENERATE_DIR = 'main/mt22/parser'
+GENERATE_DIR = '/home/thanhdxn/Documents/222/PPL_Doc/Asgm-2/src/main/mt22/parser'
 
 
 def main(argv):
@@ -16,14 +16,14 @@ def main(argv):
         printUsage()
     elif argv[0] == 'gen':
         subprocess.run(["antlr4","-v","4.9.2", "-o", "../target",
-                       "-no-listener", "-visitor", "main/mt22/parser/MT22.g4"])
+                       "-no-listener", "-visitor", "/home/thanhdxn/Documents/222/PPL_Doc/Asgm-2/src/main/mt22/parser/MT22.g4"])
     elif argv[0] == 'clean':
         subprocess.run(["rm", "-rf", TARGET_DIR + "/*"])
 
     elif argv[0] == 'test':
         if not os.path.isdir(TARGET_DIR + "/" + GENERATE_DIR):
             subprocess.run(["antlr4","-v","4.9.2", "-o", GENERATE_DIR,
-                           "-no-listener", "-visitor", "main/mt22/parser/MT22.g4"])
+                           "-no-listener", "-visitor", "/home/thanhdxn/Documents/222/PPL_Doc/Asgm-2/src/main/mt22/parser/MT22.g4"])
         if not (TARGET_DIR + "/" + GENERATE_DIR) in sys.path:
             sys.path.append(TARGET_DIR + "/" + GENERATE_DIR)
         if len(argv) < 2:
@@ -31,7 +31,7 @@ def main(argv):
         elif argv[1] == 'LexerSuite':
             from LexerSuite import LexerSuite
             getAndTest(LexerSuite)
-        elif argv[1] == 'ParserSuite':
+        elif argv[1] == 'ParserSuite1':
             from ParserSuite import ParserSuite
             getAndTest(ParserSuite)
         elif argv[1] == 'ASTGenSuite':

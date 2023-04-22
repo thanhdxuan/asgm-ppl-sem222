@@ -1,0 +1,7 @@
+
+        x: integer = 1;
+    
+        y: function void() {
+            x: auto = 1.5;
+        }
+        

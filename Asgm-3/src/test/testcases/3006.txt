@@ -1,0 +1,10 @@
+
+        x: integer = 1;
+        z: function void() inherit z {
+            super(1);
+            x: auto = 1.5;
+        }
+        y: function void() {
+            x: auto = 1.5;
+        }
+        

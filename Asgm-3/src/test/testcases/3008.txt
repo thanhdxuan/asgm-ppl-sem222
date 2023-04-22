@@ -1,0 +1,10 @@
+
+        x: integer = 1;
+        z: function void() inherit y {
+            preventDefault();
+            x: auto = 1.5;
+        }
+        y: function void(a: string, b: integer) {
+            x: auto = 1.5;
+        }
+        
