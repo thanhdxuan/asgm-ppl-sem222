@@ -17,6 +17,10 @@ class Emitter():
         typeIn = type(inType)
         if typeIn is IntegerType:
             return "I"
+        elif typeIn is FloatType:
+            return "F"
+        elif typeIn is BooleanType:
+            return "Z"
         elif typeIn is StringType:
             return "Ljava/lang/String;"
         elif typeIn is VoidType:
@@ -25,8 +29,8 @@ class Emitter():
             return "[" + self.getJVMType(inType.typ)
         elif typeIn is cgen.MType:
             return "(" + "".join(list(map(lambda x: self.getJVMType(x), inType.partype))) + ")" + self.getJVMType(inType.rettype)
-        # elif typeIn is ClassType:
-        #     return "L" + inType.classname.name + ";"
+        elif typeIn is cgen.ClassType:
+            return "L" + inType.cname.name + ";"
 
     def getFullType(inType):
         typeIn = type(inType)
@@ -85,7 +89,7 @@ class Emitter():
             return self.emitPUSHICONST(in_, frame)
         elif type(typ) is StringType:
             frame.push()
-            return self.jvm.emitLDC(in_)
+            return self.jvm.emitLDC('"' + in_ + '"')
         else:
             raise IllegalOperandException(in_)
 
@@ -100,7 +104,7 @@ class Emitter():
         if type(in_) is IntegerType:
             return self.jvm.emitIALOAD()
         # elif type(in_) is cgen.ArrayPointerType or type(in_) is cgen.ClassType or type(in_) is StringType:
-        elif type(in_) is ClassType or type(in_) is StringType:
+        elif type(in_) is cgen.ClassType or type(in_) is StringType:
             return self.jvm.emitAALOAD()
         else:
             raise IllegalOperandException(str(in_))
@@ -116,7 +120,7 @@ class Emitter():
         if type(in_) is IntegerType:
             return self.jvm.emitIASTORE()
         # elif type(in_) is cgen.ArrayPointerType or type(in_) is cgen.ClassType or type(in_) is StringType:
-        elif type(in_) is ClassType or type(in_) is StringType:
+        elif type(in_) is cgen.ClassType or type(in_) is StringType:
             return self.jvm.emitAASTORE()
         else:
             raise IllegalOperandException(str(in_))
@@ -136,7 +140,6 @@ class Emitter():
         # fromLabel: Int
         # toLabel: Int
         # frame: Frame
-
         return self.jvm.emitVAR(in_, varName, self.getJVMType(inType), fromLabel, toLabel)
 
     def emitREADVAR(self, name, inType, index, frame):
@@ -150,7 +153,7 @@ class Emitter():
         if type(inType) is IntegerType:
             return self.jvm.emitILOAD(index)
         # elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
-        elif type(inType) is ClassType or type(inType) is StringType:
+        elif type(inType) is cgen.ClassType or type(inType) is StringType:
             return self.jvm.emitALOAD(index)
         else:
             raise IllegalOperandException(name)
@@ -182,10 +185,11 @@ class Emitter():
 
         frame.pop()
 
-        if type(inType) is IntegerType:
+        if type(inType) in [IntegerType, BooleanType]:
             return self.jvm.emitISTORE(index)
-        # elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
-        elif type(inType) is ClassType or type(inType) is StringType:
+        elif type(inType) is FloatType:
+            return self.jvm.emitFSTORE(index)
+        elif type(inType) is cgen.ClassType or type(inType) is StringType or type(inType) is ArrayType:
             return self.jvm.emitASTORE(index)
         else:
             raise IllegalOperandException(name)
@@ -215,7 +219,7 @@ class Emitter():
         # isFinal: Boolean
         # value: String
 
-        return self.jvm.emitSTATICFIELD(lexeme, self.getJVMType(in_), false)
+        return self.jvm.emitSTATICFIELD(lexeme, self.getJVMType(in_), False)
 
     def emitGETSTATIC(self, lexeme, in_, frame):
         # lexeme: String
@@ -484,7 +488,6 @@ class Emitter():
         # in_: Type
         # isStatic: Boolean
         # frame: Frame
-
         return self.jvm.emitMETHOD(lexeme, self.getJVMType(in_), isStatic)
 
     '''   generate the end directive for a function.
@@ -508,11 +511,16 @@ class Emitter():
     *   @param index the index of the local variable.
     *   @param in the type of the local array variable.
     '''
-
+    def initLocalArrayVar(self, index, in_):
+        pass
+    
     '''   generate code to initialize local array variables.
     *   @param in the list of symbol entries corresponding to local array variable.    
     '''
-
+    def initLocalArraysVars(self, in_):
+        pass
+    def initArrayParams(self, in_, type):
+        pass
     '''   generate code to jump to label if the value on top of operand stack is true.<p>
     *   ifgt label
     *   @param label the label where the execution continues if the value on top of stack is true.
