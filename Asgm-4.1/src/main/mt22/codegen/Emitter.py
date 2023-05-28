@@ -150,9 +150,11 @@ class Emitter():
         # ... -> ..., value
 
         frame.push()
-        if type(inType) is IntegerType:
+        if type(inType) in [IntegerType, BooleanType]:
             return self.jvm.emitILOAD(index)
         # elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
+        elif type(inType) is FloatType:
+            return self.jvm.emitFLOAD(index)
         elif type(inType) is cgen.ClassType or type(inType) is StringType:
             return self.jvm.emitALOAD(index)
         else:
@@ -599,11 +601,12 @@ class Emitter():
         # in_: Type
         # frame: Frame
 
-        if type(in_) is IntegerType:
-            frame.pop()
-            return self.jvm.emitIRETURN()
-        elif type(in_) is VoidType:
-            return self.jvm.emitRETURN()
+        if type(in_) is VoidType: return self.jvm.emitRETURN()
+
+        frame.pop()
+        if type(in_) in [IntegerType, BooleanType]: return self.jvm.emitIRETURN()
+        if type(in_) is FloatType: return self.jvm.emitFRETURN()
+        return self.jvm.emitARETURN()
 
     ''' generate code that represents a label	
     *   @param label the label

@@ -66,7 +66,7 @@ public class io {
     }
 
 	 public static void printInteger(int a ) {
-		System.out.print(a);
+		System.out.println(a);
   	}
     
     /** same as putString except that it also prints a new line
