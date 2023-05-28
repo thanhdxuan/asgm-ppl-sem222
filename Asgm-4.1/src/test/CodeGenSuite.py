@@ -103,8 +103,23 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     }"""
     #     expect = r""""""
     #     self.assertTrue(TestCodeGen.test(init, expect, 509))
-    def test9(self):
-        """Test conversation"""
+    # def test9(self):
+    #     """Test conversation"""
+    #     init = """hehe: string = "1223";
+    #     bar: function float() {
+    #         return 1;
+    #     }
+    #     foo: function void(a: integer, b: string, c: float) {
+    #     }
+    #     main: function void () {
+    #         a: integer = 1;
+    #         b: float = 1.2;
+    #         foo(a, "123", bar());
+    #     }"""
+    #     expect = r""""""
+    #     self.assertTrue(TestCodeGen.test(init, expect, 510))
+    def test10(self):
+        """Test expr"""
         init = """hehe: string = "1223";
         bar: function float() {
             return 1;
@@ -113,8 +128,9 @@ class CheckCodeGenSuite(unittest.TestCase):
         }
         main: function void () {
             a: integer = 1;
-            b: float = 1.2;
+            b: float = (1.2 + 1) * 2;
+            c: boolean = true;
             foo(a, "123", bar());
         }"""
         expect = r""""""
-        self.assertTrue(TestCodeGen.test(init, expect, 510))
+        self.assertTrue(TestCodeGen.test(init, expect, 511))

@@ -304,7 +304,7 @@ class CodeGenVisitor(Visitor):
     def visitFloatLit(self, ast, o):
         return self.emit.emitPUSHFCONST(str(ast.val), o.frame), FloatType()
     def visitBooleanLit(self, ast, o):
-        return self.emit.emitPUSHICONST(str(ast.val), o.frame), BooleanType()
+        return self.emit.emitPUSHICONST(str(ast.val).lower(), o.frame), BooleanType()
     
     
     def visitArrayCell(self, ast, o):
@@ -320,10 +320,10 @@ class CodeGenVisitor(Visitor):
             if type(e1t) is type(e2t):
                 rt = e1t
             elif type(e1t) is FloatType and type(e2t) is IntegerType:
-                e1c += self.emit.emitI2F(o.frame)
+                e2c += self.emit.emitI2F(o.frame)
                 rt = FloatType()
             elif type(e1t) is IntegerLit and type(e2t) is FloatType:
-                e2c += self.emit.emitI2F(o.frame)
+                e1c += self.emit.emitI2F(o.frame)
                 rt = FloatType()
             if op in ['+', '-']:
                 opcode = self.emit.emitADDOP(op, rt, o.frame)
@@ -355,7 +355,7 @@ class CodeGenVisitor(Visitor):
                 if flag1 is True and c == '"': break
             opcode = self.emit.emitPUSHCONST(s1 + s2, StringType(), o.frame)
             code = opcode
-        return code
+        return code, rt
     def visitUnExpr(self, ast, o): # op: str, val: Expr
         ec, et = self.visit(ast.val, o)
         op = ast.op
