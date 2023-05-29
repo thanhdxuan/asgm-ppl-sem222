@@ -11,7 +11,7 @@
          "program": "${workspaceFolder}/run.py",
          "console": "integratedTerminal",
          "justMyCode": true,
-         "args": ["test", "CodeGenSuite"]
+         "args": ["test", "ASTGenSuite"]
       }
    ]
 }

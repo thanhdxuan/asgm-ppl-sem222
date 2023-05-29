@@ -1,3 +1,9 @@
 main: function void () {
-            printInteger(4);
+            i: integer = 0;
+            do {
+                i = i + 1;
+                if (i == 6 || i == 8) continue;
+                printInteger(i);
+            }
+            while(i < 10);
         }

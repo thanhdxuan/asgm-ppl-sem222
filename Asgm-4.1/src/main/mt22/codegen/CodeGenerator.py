@@ -294,7 +294,121 @@ class CodeGenVisitor(Visitor):
                 self.emit.printout(self.emit.emitI2F(o.frame))
         code = self.emit.emitRETURN(o.frame.returnType, o.frame)
         self.emit.printout(code)
+    
+    def visitIfStmt(self, ast, o):
+        # cond: Expr, tstmt: Stmt, fstmt: Stmt or None = None
+        ec, et = self.visit(ast.cond, Access(o.frame, o.sym, False))
+        self.emit.printout(ec)
 
+        if ast.fstmt is None:
+            fLabel = o.frame.getNewLabel()
+            code = self.emit.emitIFFALSE(fLabel, o.frame)
+            self.emit.printout(code)
+            self.visit(ast.tstmt, o)
+            code = self.emit.emitLABEL(fLabel, o.frame)
+            self.emit.printout(code)
+        else:
+            fLabel = o.frame.getNewLabel()
+            tLabel = o.frame.getNewLabel()
+            code = self.emit.emitIFFALSE(fLabel, o.frame)
+            self.emit.printout(code)
+            self.visit(ast.tstmt, o)
+            code = self.emit.emitGOTO(tLabel, o.frame)
+            self.emit.printout(code)
+            code = self.emit.emitLABEL(fLabel, o.frame)
+            self.emit.printout(code)
+            self.visit(ast.fstmt, o)
+            code = self.emit.emitLABEL(tLabel, o.frame)
+            self.emit.printout(code)
+
+    def visitBlockStmt(self, ast, o): #body: List[Stmt or VarDecl]
+        env = o.sym
+        o.frame.enterScope(False)
+        self.emit.printout(self.emit.emitLABEL(o.frame.getStartLabel(), o.frame))
+        varList = SubBody(o.frame, env)
+        for stmt in ast.body:
+            if type(stmt) is VarDecl:
+                varList = self.visit(stmt, varList)
+            else:
+                self.visit(stmt, varList)
+        self.emit.printout(self.emit.emitLABEL(o.frame.getEndLabel(), o.frame))
+        o.frame.exitScope()
+
+    def visitAssignStmt(self, ast, o): # lhs: LHS, rhs: Expr
+        rc, rt = self.visit(ast.rhs, Access(o.frame, o.sym, False))
+        lc, lt = self.visit(ast.lhs, Access(o.frame, o.sym, True))
+
+        self.emit.printout(rc)
+        self.emit.printout(lc)
+    def visitForStmt(self, ast, o): # init: AssignStmt, cond: Expr, upd: Expr, stmt: Stmt
+        self.visit(ast.init, o)
+
+        o.frame.enterLoop()
+        ctnLabel = o.frame.getContinueLabel()
+        brkLabel = o.frame.getBreakLabel()
+        self.emit.printout(self.emit.emitLABEL(ctnLabel, o.frame))
+        ec, et = self.visit(ast.cond, Access(o.frame, o.sym, False))
+        self.emit.printout(ec)
+        self.emit.printout(self.emit.emitIFFALSE(brkLabel, o.frame))
+        self.visit(ast.stmt, o)
+        self.visit(AssignStmt(ast.init.lhs, ast.upd), o)
+        # self.emit.printout(uc)
+        self.emit.printout(self.emit.emitGOTO(ctnLabel, o.frame))
+        self.emit.printout(self.emit.emitLABEL(brkLabel, o.frame))
+
+        o.frame.exitLoop()
+    def visitWhileStmt(self, ast, o): # cond: Expr, stmt: Stmt
+        # Enter loop
+        o.frame.enterLoop()
+        # Get new Label for while loop
+        loopLabel = o.frame.getContinueLabel()
+        # Get new label for if expr is False
+        fLabel = o.frame.getBreakLabel()
+        
+        # Put loopLabel here
+        code = self.emit.emitLABEL(loopLabel, o.frame)
+        # Generate code
+        self.emit.printout(code)
+        
+        ec, et = self.visit(ast.cond, Access(o.frame, o.sym, False))
+        
+        self.emit.printout(ec)
+        
+        
+        # Jump to fLabel if expr is False
+        code = self.emit.emitIFFALSE(fLabel, o.frame)
+        self.emit.printout(code)
+        
+        # Gen code for stmt
+        self.visit(ast.stmt, o)
+        
+        # Jump to loopLabel for new loop!
+        code = self.emit.emitGOTO(loopLabel, o.frame)
+        self.emit.printout(code)
+        # Put fLabel here
+        code = self.emit.emitLABEL(fLabel, o.frame)
+        self.emit.printout(code)
+        # exit loop
+        o.frame.exitLoop()
+    def visitDoWhileStmt(self, ast, o): # cond: Expr, stmt: BlockStmt
+        o.frame.enterLoop()
+        ctnLabel = o.frame.getContinueLabel()
+        brkLabel = o.frame.getBreakLabel()
+
+        self.emit.printout(self.emit.emitLABEL(ctnLabel, o.frame))
+        self.visit(ast.stmt, o)
+        ec, et = self.visit(ast.cond, Access(o.frame, o.sym, False))
+        self.emit.printout(ec)
+        self.emit.printout(self.emit.emitIFFALSE(brkLabel, o.frame))
+        self.emit.printout(self.emit.emitGOTO(ctnLabel, o.frame))
+        self.emit.printout(self.emit.emitLABEL(brkLabel, o.frame))
+        o.frame.exitLoop()
+    def visitBreakStmt(self, ast, o):
+        brkLabel = o.frame.getBreakLabel()
+        self.emit.printout(self.emit.emitGOTO(brkLabel, o.frame))
+    def visitContinueStmt(self, ast, o):
+        ctnLabel = o.frame.getContinueLabel()
+        self.emit.printout(self.emit.emitGOTO(ctnLabel, o.frame))
 #NOTE --- Expressions
 
     def visitIntegerLit(self, ast, o):
@@ -333,28 +447,22 @@ class CodeGenVisitor(Visitor):
         if op in ['&&', '||', '==', '!=', '<', '>', '<=', '>=']:
             rt = BooleanType()
             opcode = self.emit.emitREOP(op, rt, o.frame)
+            if op in ['<', '>', '<=', '>=']:
+                rt = IntegerType()
+                if type(e1t) is FloatType and type(e2t) is IntegerType:
+                    e2c += self.emit.emitI2F(o.frame)
+                    rt = FloatType()
+                elif type(e1t) is IntegerType and type(e2t) is FloatType:
+                    e1c += self.emit.emitI2F(o.frame)
+                    rt = FloatType()
+                opcode = self.emit.emitREOP(op, rt, o.frame)
             code = e1c + e2c + opcode
         if op in ['::']:
-            rt = StringType()
-            flag = False
-            s1 = ""
-            for c in e1c:
-                if c == '"':
-                    flag = True
-                if flag is True and c != '"':
-                    s1 += c
-                if flag is True and c == '"': break
-            
-            flag1 = False
-            s2 = ""
-            for c in e2c:
-                if flag1 is False and c == '"':
-                    flag1 = True
-                if flag1 is True and c != '"':
-                    s2 += c
-                if flag1 is True and c == '"': break
-            opcode = self.emit.emitPUSHCONST(s1 + s2, StringType(), o.frame)
-            code = opcode
+            code = e1c + e2c
+            code += self.emit.emitINVOKEVIRTUAL("java/lang/String/concat", MType([StringType()], StringType()), o.frame)
+        if op in ['%']:
+            rt = IntegerType()
+            code = e1c + e2c + self.emit.emitMOD(o.frame)
         return code, rt
     def visitUnExpr(self, ast, o): # op: str, val: Expr
         ec, et = self.visit(ast.val, o)
@@ -388,7 +496,7 @@ class CodeGenVisitor(Visitor):
             if type(sym.value) is not Index: #class
                 code += self.emit.emitPUTSTATIC(self.className + '/' + sym.name, sym.mtype, o.frame)
             else:
-                code += self.emit.emitWRITEVAR(sym.name, sym.typ, sym.value.vale, o.frame)
+                code += self.emit.emitWRITEVAR(sym.name, sym.mtype, sym.value.value, o.frame)
         else: #read
             if type(sym.value) is not Index:
                 code += self.emit.emitGETSTATIC(self.className + '/' + sym.name, sym.mtype, o.frame)

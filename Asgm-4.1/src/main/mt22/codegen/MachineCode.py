@@ -564,7 +564,7 @@ class JasminCode(MachineCode):
         return JasminCode.INDENT + "ior" + JasminCode.END
 
     def emitIREM(self):
-        return JasminCode.INDENT + "rem" + JasminCode.END
+        return JasminCode.INDENT + "irem" + JasminCode.END
 
     def emitIFACMPEQ(self, label):
         # label: Int
@@ -628,7 +628,7 @@ class JasminCode(MachineCode):
 
     def emitGOTO(self, label):
         # label: Int
-        return JasminCode.INDENT + "goto Label" + label + JasminCode.END
+        return JasminCode.INDENT + "goto Label" + str(label) + JasminCode.END
 
     def emitINEG(self):
         return JasminCode.INDENT + "ineg" + JasminCode.END
