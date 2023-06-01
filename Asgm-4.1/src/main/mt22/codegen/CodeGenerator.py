@@ -264,7 +264,7 @@ class CodeGenVisitor(Visitor):
         endLabel = o.frame.getEndLabel()
         code = self.emit.emitVAR(idx, name, typ, startLabel, endLabel, o.frame)
         self.emit.printout(code)
-        return SubBody(o.frame, [Symbol(name, typ)] + env.sym)
+        return SubBody(o.frame, [Symbol(name, typ, Index(idx))] + env.sym)
 
 #NOTE --- Statements
     def visitCallStmt(self, ast, o):

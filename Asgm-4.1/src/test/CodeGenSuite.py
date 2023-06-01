@@ -43,16 +43,18 @@ class CheckCodeGenSuite(unittest.TestCase):
         self.assertTrue(TestCodeGen.test(init, expect, 504))
 
     def test4(self):
+        """test - funcall"""
         init = """hehe: string = "1223";
-        foo: function void() {
-            a: string = "da";
+        foo: function string() {
+            a: string = "Hello";
+            return a;
         }
         main: function void () {
             a: integer = 1;
             b: float = 1.2;
-            //c: string;
+            printString(foo());
         }"""
-        expect = r""""""
+        expect = """Hello\n"""
         self.assertTrue(TestCodeGen.test(init, expect, 505))
     def test5(self):
         init = """hehe: string = "1223";
@@ -314,41 +316,6 @@ class CheckCodeGenSuite(unittest.TestCase):
         }"""
         expect = """1\n2\n3\n4\n5\n7\n8\n9\n10\n"""
         self.assertTrue(TestCodeGen.test(init, expect, 522))
-# #FIXME - AST Error
-#     # def test22(self):
-#     #     """Test do while stmt - continue"""
-#     #     init = Program([FuncDecl(
-#     #         "main", 
-#     #         VoidType(), 
-#     #         list(), 
-#     #         None, 
-#     #         BlockStmt([
-#     #             VarDecl("i", IntegerType(), IntegerLit(0)),
-#     #             DoWhileStmt(BinExpr('<', Id('i'), IntegerLit(10)), 
-#     #                         BlockStmt([
-#     #                             AssignStmt(Id('i'), BinExpr('+', Id('i'), IntegerLit(1))), 
-#     #                             IfStmt(
-#     #                                 BinExpr('||', 
-#     #                                         BinExpr('==', Id('i'), IntegerLit(6)), 
-#     #                                         BinExpr('==', Id('i'), IntegerLit(8))), 
-#     #                                 ContinueStmt()), 
-#     #                             CallStmt('printInteger', [Id('i')])]))]))])
-#     #     # init = """str: integer = 10;
-#     #     # bar: function integer() {
-#     #     #     return 1;
-#     #     # }
-#     #     # main: function void () {
-#     #     #     i: integer = 0;
-#     #     #     do {
-#     #     #         i = i + 1;
-#     #     #         if (i == 6 || i == 8) continue;
-#     #     #         printInteger(i);
-#     #     #     }
-#     #     #     while(i < 10);
-#     #     # }"""
-#     #     expect = r"""123457910"""
-#     #     self.assertTrue(TestCodeGen.test(init, expect, 523))
-    
     def test24(self):
         """Test array declare - local"""
         init = """arr: array [2] of integer = {3, 4};
@@ -609,3 +576,57 @@ class CheckCodeGenSuite(unittest.TestCase):
         }"""
         expect = """Toi la Thanh!\n"""
         self.assertTrue(TestCodeGen.test(init, expect, 615))
+
+    def test_new_15(self):
+        """test - funcall"""
+        init = """hehe: string = "1223";
+        sum: function integer(a: integer, b: integer) {
+            return a + b;
+        }
+        main: function void () {
+            res: integer;
+            res = sum(2, 3);
+            printInteger(res);
+        }"""
+        expect = """5\n"""
+        self.assertTrue(TestCodeGen.test(init, expect, 616))
+
+    def test_new_16(self):
+        """test - funcall"""
+        init = """
+        sum: function integer(a: array [5] of integer) {
+            i: integer;
+            s: integer = 0;
+            for (i = 0, i < 5, i + 1) {
+                s = s + a[i];
+            }
+            return s;
+        }
+        main: function void () {
+            arr: array [5] of integer = {1, 2, 3, 4, 5};
+            s: integer;
+            s = sum(arr);
+            printInteger(s);
+        }"""
+        expect = """15\n"""
+        self.assertTrue(TestCodeGen.test(init, expect, 617))
+
+    def test_new_17(self):
+        """test - funcall"""
+        init = """
+        sum: function integer(a: array [5] of integer) {
+            i: integer;
+            s: integer = 0;
+            for (i = 0, i < 5, i + 1) {
+                s = s + a[i];
+            }
+            return s;
+        }
+        main: function void () {
+            arr: array [5] of integer = {1, 2, 3, 4, 5};
+            s: integer;
+            s = sum(arr) + 10;
+            printInteger(s);
+        }"""
+        expect = """25\n"""
+        self.assertTrue(TestCodeGen.test(init, expect, 618))

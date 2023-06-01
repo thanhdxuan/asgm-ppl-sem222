@@ -165,7 +165,7 @@ class Emitter():
         # elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
         elif type(inType) is FloatType:
             return self.jvm.emitFLOAD(index)
-        elif type(inType) is cgen.ClassType or type(inType) is StringType:
+        elif type(inType) is cgen.ClassType or type(inType) is StringType or type(inType) is ArrayType:
             return self.jvm.emitALOAD(index)
         else:
             raise IllegalOperandException(name)
