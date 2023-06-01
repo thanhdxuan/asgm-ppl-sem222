@@ -337,10 +337,14 @@ class CodeGenVisitor(Visitor):
 
     def visitAssignStmt(self, ast, o): # lhs: LHS, rhs: Expr
         rc, rt = self.visit(ast.rhs, Access(o.frame, o.sym, False))
-        lc, lt = self.visit(ast.lhs, Access(o.frame, o.sym, True))
+        lc, lt = self.visit(ast.lhs, Access(o.frame, o.sym, True, True))
 
-        self.emit.printout(rc)
-        self.emit.printout(lc)
+        if not isinstance(ast.lhs, ArrayCell):
+            self.emit.printout(rc + lc)
+            
+        else:
+            self.emit.printout(lc + rc)
+            self.emit.printout(self.visit(ast.lhs, Access(o.frame, o.sym, True, False)))
     def visitForStmt(self, ast, o): # init: AssignStmt, cond: Expr, upd: Expr, stmt: Stmt
         self.visit(ast.init, o)
 
@@ -437,8 +441,45 @@ class CodeGenVisitor(Visitor):
         elif type(first) is BooleanLit:
             typ = BooleanType()
         return dimen, typ
-    def visitArrayCell(self, ast, o): # name: str, cell: List[Expr]
-        pass
+    def visitArrayCell(self, ast, o): # name: str, cell: List[Expr] - LHS
+        # o: Access(frame, sym, isLeft, isFirst)
+        sym = list(filter(lambda x: x.name == ast.name, o.sym))[0]
+        code = ""
+        if o.isLeft is True: #write
+            if type(sym.value) is not Index: #class
+                code += self.emit.emitGETSTATIC(self.className + '/' + sym.name, sym.mtype, o.frame)
+                if len(ast.cell) == 1 and o.isFirst:
+                    ec, et = self.visit(ast.cell[0], Access(o.frame, o.sym, False))
+                    code += ec
+                    # code += self.emit.emitASTORE(sym.mtype.typ, o.frame)
+                elif len(ast.cell) == 1 and not o.isFirst:
+                    return self.emit.emitASTORE(sym.mtype.typ, o.frame)
+                else: pass
+            else:
+                code += self.emit.emitWRITEVAR2(sym.name, sym.mtype, sym.value.value, o.frame)
+                if len(ast.cell) == 1 and o.isFirst:
+                    ec, et = self.visit(ast.cell[0], Access(o.frame, o.sym, False))
+                    code += ec
+                    # code += self.emit.emitASTORE(sym.mtype.typ, o.frame)
+                elif len(ast.cell) == 1 and not o.isFirst:
+                    return self.emit.emitASTORE(sym.mtype.typ, o.frame)
+                else: pass
+        else: #read
+            if type(sym.value) is not Index:
+                if len(ast.cell) == 1:
+                    code += self.emit.emitGETSTATIC(self.className + '/' + sym.name, sym.mtype, o.frame)
+                    ec, et = self.visit(ast.cell[0], Access(o.frame, o.sym, False))
+                    code += ec
+                    code += self.emit.emitALOAD(sym.mtype.typ, o.frame)
+            else:
+                code += self.emit.emitREADVAR2(ast.name, sym.mtype, sym.value.value, o.frame) # array address
+                if len(ast.cell) == 1:
+                    ec, et = self.visit(ast.cell[0], Access(o.frame, o.sym, False))
+                    code += ec
+                    code += self.emit.emitALOAD(sym.mtype.typ, o.frame)
+                else: pass
+        return code, sym.mtype.typ
+            
     def visitArrayLit(self, ast, o): # explist: List[Expr] - {1, 2, 3, 4, 5}
         code = ""
 
@@ -481,6 +522,7 @@ class CodeGenVisitor(Visitor):
         e1c, e1t = self.visit(ast.left, o)
         e2c, e2t = self.visit(ast.right, o)
         op = ast.op
+        rt = e1t
 
         if op in ['+', '-', '*', '/']:
             if type(e1t) is type(e2t):
@@ -488,7 +530,7 @@ class CodeGenVisitor(Visitor):
             elif type(e1t) is FloatType and type(e2t) is IntegerType:
                 e2c += self.emit.emitI2F(o.frame)
                 rt = FloatType()
-            elif type(e1t) is IntegerLit and type(e2t) is FloatType:
+            elif type(e1t) is IntegerType and type(e2t) is FloatType:
                 e1c += self.emit.emitI2F(o.frame)
                 rt = FloatType()
             if op in ['+', '-']:
@@ -508,6 +550,8 @@ class CodeGenVisitor(Visitor):
                     e1c += self.emit.emitI2F(o.frame)
                     rt = FloatType()
                 opcode = self.emit.emitREOP(op, rt, o.frame)
+            if op == '&&':
+                opcode = self.emit.emitANDOP(o.frame)
             code = e1c + e2c + opcode
         if op in ['::']:
             code = e1c + e2c
@@ -521,7 +565,9 @@ class CodeGenVisitor(Visitor):
         op = ast.op
         if op == '!':
             rt = BooleanType()
+            ec += self.emit.emitNOT(rt, o.frame)
         else:
+            ec += self.emit.emitNEGOP(et, o.frame)
             rt = et
         return ec, rt
     def visitFuncCall(self, ast, o):

@@ -106,8 +106,11 @@ class Emitter():
         frame.pop()
         if type(in_) is IntegerType:
             return self.jvm.emitIALOAD()
-        # elif type(in_) is cgen.ArrayPointerType or type(in_) is cgen.ClassType or type(in_) is StringType:
-        elif type(in_) is cgen.ClassType or type(in_) is StringType:
+        elif type(in_) is FloatType:
+            return self.jvm.emitFALOAD()
+        elif type(in_) is BooleanType:
+            return self.jvm.emitBALOAD()
+        elif type(in_) in [ArrayType, StringType]:
             return self.jvm.emitAALOAD()
         else:
             raise IllegalOperandException(str(in_))
@@ -171,14 +174,21 @@ class Emitter():
     *
     '''
 
-    def emitREADVAR2(self, name, typ, frame):
+    def emitREADVAR2(self, name, inType, _in, frame):
         # name: String
         # typ: Type
         # frame: Frame
+        # _in: aref index
+        # index: position
         # ... -> ..., value
 
-        # frame.push()
-        raise IllegalOperandException(name)
+        frame.push()
+        res = list()
+        if type(inType) is ArrayType:
+            res.append(self.jvm.emitALOAD(_in))
+            return ''.join(res)
+        else:
+            raise IllegalOperandException(name)
 
     '''
     *   generate code to pop a value on top of the operand stack and store it to a block-scoped variable.
@@ -193,7 +203,6 @@ class Emitter():
         # ..., value -> ...
 
         frame.pop()
-
         if type(inType) in [IntegerType, BooleanType]:
             return self.jvm.emitISTORE(index)
         elif type(inType) is FloatType:
@@ -207,14 +216,17 @@ class Emitter():
     *
     '''
 
-    def emitWRITEVAR2(self, name, typ, frame):
+    def emitWRITEVAR2(self, name, typ, index, frame):
         # name: String
         # typ: Type
         # frame: Frame
         # ..., value -> ...
 
-        # frame.push()
-        raise IllegalOperandException(name)
+        frame.push()
+        if type(typ) is ArrayType:
+            return self.jvm.emitALOAD(index)
+        else:
+            raise IllegalOperandException(name)
 
     ''' generate the field (static) directive for a class mutable or immutable attribute.
     *   @param lexeme the name of the attribute.
@@ -339,10 +351,10 @@ class Emitter():
         label2 = frame.getNewLabel()
         result = list()
         result.append(self.emitIFTRUE(label1, frame))
-        result.append(self.emitPUSHCONST("true", in_, frame))
+        result.append(self.emitPUSHICONST("true", frame))
         result.append(self.emitGOTO(label2, frame))
         result.append(self.emitLABEL(label1, frame))
-        result.append(self.emitPUSHCONST("false", in_, frame))
+        result.append(self.emitPUSHICONST("false", frame))
         result.append(self.emitLABEL(label2, frame))
         return ''.join(result)
 

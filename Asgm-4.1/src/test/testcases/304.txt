@@ -1,4 +1,0 @@
-main: function void () {
-            arr: array [2] of integer;
-            arr = {1 , 2};
-        }
