@@ -1,1 +1,0 @@
-delta: integer = 3;

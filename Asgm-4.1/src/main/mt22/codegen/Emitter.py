@@ -32,10 +32,14 @@ class Emitter():
         elif typeIn is cgen.ClassType:
             return "L" + inType.cname.name + ";"
 
-    def getFullType(inType):
+    def getFullType(self, inType):
         typeIn = type(inType)
         if typeIn is IntegerType:
             return "int"
+        elif typeIn is FloatType:
+            return "float"
+        elif typeIn is BooleanType:
+            return "boolean"
         elif typeIn is StringType:
             return "java/lang/String"
         elif typeIn is VoidType:
@@ -44,7 +48,6 @@ class Emitter():
     def emitPUSHICONST(self, in_, frame):
         # in: Int or Sring
         # frame: Frame
-
         frame.push()
         if type(in_) is int:
             i = in_
@@ -119,8 +122,12 @@ class Emitter():
         frame.pop()
         if type(in_) is IntegerType:
             return self.jvm.emitIASTORE()
+        elif type(in_) is FloatType:
+            return self.jvm.emitFASTORE()
+        elif type(in_) is BooleanType:
+            return self.jvm.emitBASTORE()
         # elif type(in_) is cgen.ArrayPointerType or type(in_) is cgen.ClassType or type(in_) is StringType:
-        elif type(in_) is cgen.ClassType or type(in_) is StringType:
+        elif type(in_) in [StringType, ArrayType]:
             return self.jvm.emitAASTORE()
         else:
             raise IllegalOperandException(str(in_))
@@ -582,7 +589,14 @@ class Emitter():
     *   Before: ...,value1<p>
     *   After:  ...,value1,value1<p>
     '''
+    def emitNEW(self, lexeme, frame):
+        frame.push()
+        return self.jvm.emitNEW(lexeme)
+    def emitNEWARRAY(self, lexeme, frame):
+        return self.jvm.emitNEWARRAY(lexeme)
+    def emitANEWARRAY(self, lexeme, frame):
 
+        return self.jvm.emitANEWARRAY(lexeme)
     def emitDUP(self, frame):
         # frame: Frame
 
@@ -616,12 +630,19 @@ class Emitter():
         # in_: Type
         # frame: Frame
 
-        if type(in_) is VoidType: return self.jvm.emitRETURN()
-
-        frame.pop()
-        if type(in_) in [IntegerType, BooleanType]: return self.jvm.emitIRETURN()
-        if type(in_) is FloatType: return self.jvm.emitFRETURN()
-        return self.jvm.emitARETURN()
+        if type(in_) is IntegerType:
+            frame.pop()
+            return self.jvm.emitIRETURN()
+        elif type(in_) is FloatType:
+            frame.pop()
+            return self.jvm.emitFRETURN()
+        elif type(in_) is BooleanType:
+            frame.pop()
+            return self.jvm.emitIRETURN()
+        elif type(in_) is VoidType:
+            return self.jvm.emitRETURN()
+        elif type(in_) is StringType or type(in_) is ArrayType:
+            return self.jvm.emitARETURN()
 
     ''' generate code that represents a label	
     *   @param label the label

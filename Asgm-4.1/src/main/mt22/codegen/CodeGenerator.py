@@ -1,6 +1,6 @@
 from Emitter import Emitter
 from functools import reduce
-
+import copy
 from Frame import Frame
 from abc import ABC
 from Visitor import *
@@ -172,10 +172,10 @@ class CodeGenVisitor(Visitor):
             varList = self.visit(decl, varList)
             if type(decl.typ) is ArrayType:
                 arrayParams.append(varList.sym[0])
-        for decl in body.body:
-            if type(decl) is VarDecl and type(decl.typ) is ArrayType:
-                varList = self.visit(decl, varList)
-                arrayDecl.append(varList.sym[0])
+        # for decl in body.body:
+        #     if type(decl) is VarDecl and type(decl.typ) is ArrayType:
+        #         varList = self.visit(decl, varList)
+        #         arrayDecl.append(varList.sym[0])
             
         # Generate code for statements
         if isInit:
@@ -187,16 +187,16 @@ class CodeGenVisitor(Visitor):
                 if type(symbol.mtype) is not MType and symbol.value.init is not None:
                     self.emit.printout(self.visit(symbol.value, frame))
 
-        for symbol in arrayParams:
-            idx = symbol.value.value
-            typ = symbol.mtype.typ
-            self.emit.printout(self.emit.initArrayParams(idx, typ))
+        # for symbol in arrayParams:
+        #     idx = symbol.value.value
+        #     typ = symbol.mtype.typ
+        #     self.emit.printout(self.emit.initArrayParams(idx, typ))
         
-        for symbol in arrayDecl: #handle array decl
-            idx = symbol.value.value
-            typ = symbol.mtype.typ
-            dimensions = symbol.mtype.dimensions
-            self.emit.printout(self.emit.initLocalArraysVars())
+        # for symbol in arrayDecl: #handle array decl
+        #     idx = symbol.value.value
+        #     typ = symbol.mtype.typ
+        #     dimensions = symbol.mtype.dimensions
+        #     self.emit.printout(self.emit.initLocalArraysVars())
 
         
         # list(map(lambda x: self.visit(x, varList), body.body)) #visit statements
@@ -249,6 +249,7 @@ class CodeGenVisitor(Visitor):
         if init is not None:
             code, typ = self.visit(init, SubBody(o.frame, None))
             self.emit.printout(code)
+            
             code = self.emit.emitWRITEVAR(name, typ, idx, o.frame)
             self.emit.printout(code)
         return SubBody(o.frame, [Symbol(name, typ, Index(idx))] + env.sym)
@@ -420,11 +421,62 @@ class CodeGenVisitor(Visitor):
     def visitBooleanLit(self, ast, o):
         return self.emit.emitPUSHICONST(str(ast.val).lower(), o.frame), BooleanType()
     
-    
-    def visitArrayCell(self, ast, o):
+    def getDimensions(self, ast, o):
+        # ast: ArrayLit
+        dimen = [len(ast.explist)]
+        first = ast.explist[0]
+        while type(first) is ArrayLit:
+            dimen.append(len(first.explist))
+            first = first.explist[0]
+        if type(first) is IntegerLit:
+            typ = IntegerType()
+        elif type(first) is FloatLit:
+            typ = FloatType()
+        elif type(first) is StringLit:
+            typ = StringType()
+        elif type(first) is BooleanLit:
+            typ = BooleanType()
+        return dimen, typ
+    def visitArrayCell(self, ast, o): # name: str, cell: List[Expr]
         pass
-    def visitArrayLit(self, ast, o):
-        pass
+    def visitArrayLit(self, ast, o): # explist: List[Expr] - {1, 2, 3, 4, 5}
+        code = ""
+
+        temp = copy.deepcopy(ast)
+        dimen, typ = self.getDimensions(temp, o)
+        
+        fType = self.emit.getFullType(typ)
+        code += self.emit.emitPUSHICONST(len(ast.explist), o.frame)
+
+        # o.frame.pop()
+        if type(typ) is StringType and len(dimen) <= 1:
+            code += self.emit.emitANEWARRAY(fType, o.frame)
+
+        elif len(dimen) > 1:
+            jvmType = self.emit.getJVMType(typ)
+            for i in range(len(dimen) - 1):
+                jvmType = '[' + jvmType
+            code += self.emit.emitANEWARRAY(jvmType, o.frame)
+
+        else:
+            code += self.emit.emitNEWARRAY(fType, o.frame)
+  
+        idx = 0
+        for exp in ast.explist:
+
+            code += self.emit.emitDUP(o.frame)
+
+            code += self.emit.emitPUSHICONST(idx, o.frame)
+            ec, et = self.visit(exp, o)
+
+            code += ec
+            if len(dimen) == 1:
+                code += self.emit.emitASTORE(typ, o.frame)
+            elif len(dimen) > 1:
+                code += self.emit.emitASTORE(ArrayType([], typ), o.frame)
+            idx += 1
+        return code, ArrayType(dimen, typ)
+        
     def visitBinExpr(self, ast, o): # op: str, left: Expr, right: Expr
         e1c, e1t = self.visit(ast.left, o)
         e2c, e2t = self.visit(ast.right, o)
